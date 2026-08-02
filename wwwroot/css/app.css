@@ -50,11 +50,15 @@
 /* ===================================================
    REGOLE TIPOGRAFICHE & LAYOUT MOBILE-FIRST
    =================================================== */
+main {
+    padding-bottom: 90px;
+}
+
 html, body {
     height: 100dvh;
     max-height: 100dvh;
     overflow: hidden;
-    background-color: var(--bg-outer);
+    background-color: var(--bg-primary);
     color: var(--text-main);
     font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
     user-select: none;

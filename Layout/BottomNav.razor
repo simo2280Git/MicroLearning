@@ -1,57 +1,81 @@
 ﻿@using MicroLearning.Components.UI
 @inject NavigationManager NavManager
 
-<nav class="bottom-nav">
-    <NavLink class="nav-item" href="discover">
-        <div style="margin-bottom: 2px;"><AppIcon Name="compass" Size="24" Color="white" /></div>
-    </NavLink>
-    <NavLink class="nav-item" href="personal">
-        <div style="margin-bottom: 2px;"><AppIcon Name="lightbulb" Size="24" Color="white" /></div>
-    </NavLink>
-    <NavLink class="nav-item" href="profile">
-        <div style="margin-bottom: 2px;"><AppIcon Name="user-round" Size="24" Color="white" /></div>
-    </NavLink>
-    <NavLink class="nav-item" href="settings">
-        <div style="margin-bottom: 2px;"><AppIcon Name="settings" Size="24" Color="white" /></div>
-    </NavLink>
+<nav class="floating-nav-container">
+    <div class="bottom-nav">
+        <NavLink class="nav-item" href="discover" Match="NavLinkMatch.Prefix">
+            <AppIcon Name="compass" Size="22" Color="white" />
+        </NavLink>
+        <NavLink class="nav-item" href="personal" Match="NavLinkMatch.Prefix">
+            <AppIcon Name="lightbulb" Size="22" Color="white" />
+        </NavLink>
+        <NavLink class="nav-item" href="profile" Match="NavLinkMatch.Prefix">
+            <AppIcon Name="user-round" Size="22" Color="white" />
+        </NavLink>
+        <NavLink class="nav-item" href="settings" Match="NavLinkMatch.Prefix">
+            <AppIcon Name="settings" Size="22" Color="white" />
+        </NavLink>
+    </div>
 </nav>
 
 <style>
-    .bottom-nav {
-        position: absolute;
-        bottom: 0;
+    /* 1. Il contenitore "Volante" fisso nella finestra */
+    .floating-nav-container {
+        position: fixed;
+        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
         left: 0;
         right: 0;
-        height: var(--nav-height, 65px);
-        background-color: var(--surface-card);
-        border-top: 1px solid var(--border-color);
         display: flex;
-        justify-content: space-around;
+        justify-content: center;
         align-items: center;
-        z-index: 100;
-        padding-bottom: env(safe-area-inset-bottom + 2);
-        transition: background-color 0.3s ease, border-color 0.3s ease;
+        z-index: 9999; /* Sta sopra a qualsiasi elemento dello schermo */
+        pointer-events: none; /* Lascia passare i click al contenuto sottostante ai lati della pillola */
     }
 
+    /* 2. La pillola stilizzata in stile vetro/sfocato */
+    .bottom-nav {
+        pointer-events: auto; /* Riattiva i click solo dentro la pillola */
+        width: min(88%, 340px);
+        height: 60px;
+        /* Converte il tuo --surface-card (#1A212D) in formato semi-trasparente */
+        background-color: rgba(26, 33, 45, 0.75);
+        /* Sfocatura del contenuto che passa sotto */
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+        display: flex;
+        justify-content: space-evenly;
+        align-items: center;
+        padding: 0 10px;
+        /* Ombra che dà il senso di sospensione in aria */
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
+        transition: transform 0.2s ease, background-color 0.3s ease;
+    }
+
+    /* Stile elementi interni */
     .nav-item {
         display: flex;
-        flex-direction: column;
+        justify-content: center;
         align-items: center;
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
         text-decoration: none;
-        color: var(--text-muted);
-        font-size: 0.75rem;
-        font-weight: 500;
-        transition: all 0.2s ease;
+        opacity: 0.5;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-        .nav-item .icon {
-            font-size: 1.25rem;
-            margin-bottom: 2px;
+        .nav-item:hover {
+            opacity: 0.85;
+            background-color: rgba(255, 255, 255, 0.08);
         }
 
+        /* Icona selezionata */
         .nav-item.active {
-            color: var(--primary);
-            font-weight: 700;
-            transform: translateY(-2px);
+            opacity: 1;
+            transform: scale(1.15);
+            background-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 </style>
