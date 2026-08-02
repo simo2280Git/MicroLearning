@@ -9,7 +9,7 @@
 	  <Nullable>enable</Nullable>
 	  <ImplicitUsings>enable</ImplicitUsings>
 	  <PublishTrimmed>true</PublishTrimmed>
-	  <TrimMode>link</TrimMode>
+	  <TrimMode>partial</TrimMode>
 	  <DebuggerSupport Condition="'$(Configuration)' == 'Release'">false</DebuggerSupport>
 </PropertyGroup>
 
