@@ -1,8 +1,8 @@
 self.assetsManifest = {
-  "version": "1HH48Z6C",
+  "version": "kbEyjnkc",
   "assets": [
     {
-      "hash": "sha256-CHIehakuJCPUtdtyiYA/WSOPvPueFNZTrVZ6+cjjh08=",
+      "hash": "sha256-u/Ms5Tfbfa/3v1E6ObDbgEFIh4A5cLifAbLJH2eHs0M=",
       "url": "404.html"
     },
     {
@@ -10,8 +10,8 @@ self.assetsManifest = {
       "url": "_framework/BirdMessenger.dem0t9u7so.wasm"
     },
     {
-      "hash": "sha256-mzSm00koakNQ3sQFHh4re2ho24K65cYMjSOsxsrldOk=",
-      "url": "_framework/MicroLearning.b4cdi5v9jt.wasm"
+      "hash": "sha256-P/og2xeBUCIBUIpru26zyOsAvER4UGVnyu8bVJNPATg=",
+      "url": "_framework/MicroLearning.f0z4kz70fo.wasm"
     },
     {
       "hash": "sha256-kWp+wgpLKh5/j1KAY5ddjP3Eh8gaF2mPvVXv2qMD0uM=",
@@ -386,7 +386,7 @@ self.assetsManifest = {
       "url": "_framework/Websocket.Client.p4zw96yijk.wasm"
     },
     {
-      "hash": "sha256-V6KsRIir+2nTMbyB9GXx3/mxV1rbTKJpg8I7SvxOkNg=",
+      "hash": "sha256-Ju5GOO8sBX5eHUMjdn0yB/sVyYCbhkFpMg4/Yjwf0Tw=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -486,7 +486,7 @@ self.assetsManifest = {
       "url": "img/user-round.svg"
     },
     {
-      "hash": "sha256-CHIehakuJCPUtdtyiYA/WSOPvPueFNZTrVZ6+cjjh08=",
+      "hash": "sha256-wOn1kKGZwtdF97nZ0qn/fBy3jylPfkLJkl9T2CAAHnQ=",
       "url": "index.html"
     },
     {

@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "MicroLearning",
   "resources": {
-    "hash": "sha256-ZKyEFmg+EPuLeRqIWFviXz8zHJ/GkwPWH/zf55SDYfY=",
+    "hash": "sha256-IdpnV4h6+SaX01vSkuedz6ktyWFgar7TifnRsf1bgI8=",
     "fingerprinting": {
       "BirdMessenger.dem0t9u7so.wasm": "BirdMessenger.wasm",
       "Microsoft.AspNetCore.Authorization.l70yprr230.wasm": "Microsoft.AspNetCore.Authorization.wasm",
@@ -98,7 +98,7 @@
       "System.v2bpr4wvug.wasm": "System.wasm",
       "netstandard.opdk8cywp0.wasm": "netstandard.wasm",
       "System.Private.CoreLib.a9y60jxcby.wasm": "System.Private.CoreLib.wasm",
-      "MicroLearning.b4cdi5v9jt.wasm": "MicroLearning.wasm",
+      "MicroLearning.f0z4kz70fo.wasm": "MicroLearning.wasm",
       "dotnet.js": "dotnet.js",
       "dotnet.native.mf92lzu2d1.js": "dotnet.native.js",
       "dotnet.native.6sm8j8phll.wasm": "dotnet.native.wasm",
@@ -219,7 +219,7 @@
       "System.Xml.XDocument.d11i6eblzf.wasm": "sha256-P3wk7Jx9HviqxiOk5JLiI3fUi55ZmWM0jXliRdMfzq4=",
       "System.v2bpr4wvug.wasm": "sha256-V0+qqJsDHNUBCJjD4bkeDVr+f+Orz+wNldNNIxrsd+4=",
       "netstandard.opdk8cywp0.wasm": "sha256-bFrsJFZQPqRfEpcksF0eWCZfwGetbXmeVzaqTLU3OHQ=",
-      "MicroLearning.b4cdi5v9jt.wasm": "sha256-mzSm00koakNQ3sQFHh4re2ho24K65cYMjSOsxsrldOk="
+      "MicroLearning.f0z4kz70fo.wasm": "sha256-P/og2xeBUCIBUIpru26zyOsAvER4UGVnyu8bVJNPATg="
     }
   },
   "cacheBootResources": true,
