@@ -1,8 +1,8 @@
 self.assetsManifest = {
-  "version": "7vt5TLA4",
+  "version": "8SWEtAu7",
   "assets": [
     {
-      "hash": "sha256-t7HXUstwagwPeENPfjenh4OOlezKFU/OOtQLxdBABbw=",
+      "hash": "sha256-CHIehakuJCPUtdtyiYA/WSOPvPueFNZTrVZ6+cjjh08=",
       "url": "404.html"
     },
     {
@@ -10,8 +10,8 @@ self.assetsManifest = {
       "url": "MicroLearning.styles.css"
     },
     {
-      "hash": "sha256-Y+qXWSvdPiLPiV9IzEYO09MkcRYjyj0wZyDeItVwXN4=",
-      "url": "_framework/MicroLearning.pp08ctsiw5.wasm"
+      "hash": "sha256-xu1M08f2OTMK1STFC2uqp8u/FKndn/kwnYFCte0Rwds=",
+      "url": "_framework/MicroLearning.mgz9yo96uh.wasm"
     },
     {
       "hash": "sha256-WjzcMGDNCajBnPuqJT3ZaHmoaMb+IiOBGaRed/U1zVI=",
@@ -290,7 +290,7 @@ self.assetsManifest = {
       "url": "_framework/Websocket.Client.1s4m45ymgi.wasm"
     },
     {
-      "hash": "sha256-Ix+ShpPdvVnSHbvymiOxURTx9Mtr8TdfQfzmoF9Di/Q=",
+      "hash": "sha256-iUECWupikaTQALiIHQoNHK/GWKiYGmaSiVX0ncnNa28=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -386,7 +386,7 @@ self.assetsManifest = {
       "url": "img/user-round.svg"
     },
     {
-      "hash": "sha256-t7HXUstwagwPeENPfjenh4OOlezKFU/OOtQLxdBABbw=",
+      "hash": "sha256-CHIehakuJCPUtdtyiYA/WSOPvPueFNZTrVZ6+cjjh08=",
       "url": "index.html"
     },
     {
