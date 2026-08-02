@@ -1,0 +1,37 @@
+name: Deploy Blazor to GitHub Pages
+
+on:
+  push:
+    branches: [ main ] # Esegue il deploy ogni volta che fai push su main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Scarica il codice dal repository
+      - uses: actions/checkout@v4
+
+      # 2. Configura .NET SDK (modifica 9.0.x se usi .NET 8)
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      # 3. Compila e pubblica l'app Blazor in modalità Release
+      - name: Publish Blazor App
+        run: dotnet publish -c Release -o release
+
+      # 4. Copia index.html in 404.html per gestire il routing SPA
+      - name: Copy index.html to 404.html
+        run: cp release/wwwroot/index.html release/wwwroot/404.html
+
+      # 5. Crea il file .nojekyll per evitare che GitHub ignori le cartelle che iniziano con _ (come _framework)
+      - name: Add .nojekyll file
+        run: touch release/wwwroot/.nojekyll
+
+      # 6. Pubblica la cartella wwwroot su GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: release/wwwroot
+          branch: gh-pages
