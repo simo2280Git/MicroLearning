@@ -1,0 +1,226 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap');
+
+/* ===================================================
+   PALETTE 1: "Warm Paper & Sage" (Versione Chiara)
+   =================================================== */
+:root {
+    --bg-primary: #FAF9F5; /* Soft Cream - Sfondo carta libro */
+    --surface-card: #FFFFFF; /* Pure White - Sfondo card */
+    --text-main: #22252A; /* Warm Charcoal - Testo riposante */
+    --text-muted: #6B7280; /* Muted Slate - Dettagli e date */
+    --accent: #3D6B56; /* Sage Green - Accenti e badge */
+    --border-color: #E8E6DF; /* Soft Border - Linee divisorie */
+    --bg-outer: #030712; /* Sfondo esterno cornice desktop */
+    --nav-height: 65px;
+}
+
+/* ===================================================
+   PALETTE 2: "Deep Slate & Mint" (Dark Mode)
+   =================================================== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-primary: #0F141C; /* Deep Obsidian - Blu/Grigio notte */
+        --surface-card: #1A212D; /* Dark Slate - Superficie card */
+        --text-main: #F1F5F9; /* Off-White - Bianco seta */
+        --text-muted: #94A3B8; /* Dusty Blue - Testo di supporto */
+        --accent: #8936cc; /* Soft Mint - Dettagli attivi */
+        --border-color: #263142; /* Subtle Line - Bordi leggeri */
+    }
+}
+
+/* Forzatura manuale tramite attributo [data-theme] */
+[data-theme="dark"] {
+    --bg-primary: #0F141C;
+    --surface-card: #1A212D;
+    --text-main: #F1F5F9;
+    --text-muted: #94A3B8;
+    --accent: #8936cc;
+    --border-color: #263142;
+}
+
+[data-theme="light"] {
+    --bg-primary: #FAF9F5;
+    --surface-card: #FFFFFF;
+    --text-main: #22252A;
+    --text-muted: #6B7280;
+    --accent: #3D6B56;
+    --border-color: #E8E6DF;
+}
+
+/* ===================================================
+   REGOLE TIPOGRAFICHE & LAYOUT MOBILE-FIRST
+   =================================================== */
+html, body {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    background-color: var(--bg-outer);
+    color: var(--text-main);
+    font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    user-select: none;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Applicazione rigorosa della regola del Line-Height per la leggibilità */
+p, li, span {
+    line-height: 1.75;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Lora', serif; /* Tocco editoriale di classe per i titoli */
+    color: var(--text-main);
+    line-height: 1.3;
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-width: 480px;
+    margin: 0 auto;
+    background-color: var(--bg-primary);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
+    position: relative;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.main-content {
+    flex: 1;
+    overflow-y: auto;
+    /*padding: 1.5rem;*/ /* Margini generosi (White Space) attorno al testo */
+    padding-bottom: calc(var(--nav-height) + 1.5rem);
+    -webkit-overflow-scrolling: touch;
+}
+
+.app-header {
+    height: 55px;
+    background-color: var(--surface-card);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.25rem;
+    z-index: 10;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Stati di caricamento / vuoto */
+.feed-state-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: calc(100vh - var(--nav-height, 65px));
+    background-color: var(--bg-primary);
+    color: var(--text-main);
+}
+
+.text-accent {
+    color: var(--accent) !important;
+}
+
+.text-main {
+    color: var(--text-main) !important;
+}
+
+.text-muted-custom {
+    color: var(--text-muted) !important;
+}
+
+/* CONTENITORE PRINCIPALE FEED (SNAP SCROLL) */
+.tiktok-feed-container {
+    width: 100%;
+    height: calc(100vh - var(--nav-height, 65px));
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+    background-color: var(--bg-primary);
+    -ms-overflow-style: none; /* IE e Edge */
+    scrollbar-width: none; /* Firefox */
+}
+
+    .tiktok-feed-container::-webkit-scrollbar {
+        display: none; /* Chrome, Safari e Opera */
+    }
+
+/* SINGOLA CARD NEL FEED */
+.tiktok-card-item {
+    width: 100%;
+    height: 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+/* SCHEDA CARD INTERNA */
+.card-content-wrapper {
+    background: var(--surface-card);
+    width: 100%;
+    max-width: 480px;
+    height: 100%;
+    max-height: 720px;
+    border-radius: 24px;
+    padding: 1.75rem;
+    border: 2px solid var(--border-color);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-sizing: border-box;
+}
+
+/* CORPO CARD SCROLLABILE */
+.card-body-scrollable {
+    overflow-y: auto;
+    flex-grow: 1;
+    padding-right: 4px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+    .card-body-scrollable::-webkit-scrollbar {
+        display: none;
+    }
+
+/* COMPONENTI PERSONALIZZATI CON LA PALETTE */
+.badge-topic {
+    /* Sfondo trasparente basato sull'accento */
+    background-color: color-mix(in srgb, var(--accent) 15%, transparent);
+    color: var(--accent); /* Testo dello stesso colore dell'accento */
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    font-weight: 600;
+    font-size: 0.68rem;
+    line-height: 1.35; /* Interlinea bilanciata per le righe multiple */
+    padding: 0.35rem 0.85rem;
+    border-radius: 0.85rem; /* Un raggio fisso morbido al posto di 50rem rende meglio sui testi a più righe */
+    /* Permette l'andata a capo e l'adattamento della larghezza */
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content; /* Si adatta alla lunghezza del testo, ma senza superare il contenitore */
+    max-width: 100%; /* Può riempire tutta la larghezza disponibile della pagina o della card */
+    /* Abilita il wrap nativo del testo */
+    white-space: normal;
+    word-break: break-word; /* Evita che parole lunghissime escano dai bordi */
+}
+
+.deep-dive-box {
+    background-color: var(--bg-primary);
+    border-left: 4px solid var(--accent);
+    border-top: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tracking-wider {
+    letter-spacing: 0.05em;
+}
+
+.leading-relaxed {
+    line-height: 1.6;
+}
