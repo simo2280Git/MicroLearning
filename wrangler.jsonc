@@ -1,0 +1,7 @@
+{
+    "name": "nome-app",
+    "compatibility_date": "2026-08-02",
+    "assets": {
+        "directory": "bin/Release/net9.0/publish/wwwroot"
+    }
+}
