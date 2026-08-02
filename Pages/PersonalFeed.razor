@@ -1,0 +1,185 @@
+﻿@page "/personal"
+@using System.Security.Claims
+@using MicroLearning.Components.UI
+@using MicroLearning.Models
+@using MicroLearning.Services
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject CardService CardService
+@inject UserService UserService
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthStateProvider
+@implements IDisposable
+@attribute [Authorize]
+
+<PageTitle>MicroLearning Feed</PageTitle>
+
+@if (isLoading)
+{
+    <div class="feed-state-container">
+        <div class="spinner-border text-accent mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+        <p class="fw-semibold">L'AI sta preparando il tuo feed...</p>
+    </div>
+}
+else if (!cards.Any())
+{
+    <div class="feed-state-container text-center p-4">
+        <i class="bi bi-journal-x display-1 text-muted-custom mb-3"></i>
+        <h4 class="text-main fw-bold">Nessuna card disponibile</h4>
+        <p class="text-muted-custom">Assicurati di seguire almeno un argomento nelle impostazioni.</p>
+    </div>
+}
+else
+{
+    <!-- Contenitore Principale a Scorrimento "Snap" -->
+    <div class="tiktok-feed-container">
+        @foreach (var card in cards)
+        {
+            <div class="tiktok-card-item" data-card-id="@card.Id">
+                <div class="card-content-wrapper">
+
+                    <!-- Header: Topic Badge -->
+                    <div class="mb-3">
+                        <span class="badge-topic text-uppercase tracking-wider">
+                            @card.TopicName
+                        </span>
+                    </div>
+
+                    <!-- Titolo e Sottotitolo -->
+                    <h2 class="fw-bold mb-2 text-main card-title-custom">@card.Title</h2>
+                    <h5 class="text-muted-custom mb-4 fw-normal card-subtitle-custom">@card.Subtitle</h5>
+
+                    <!-- Corpo principale della Card -->
+                    <div class="card-body-scrollable">
+                        <p class="fs-6 leading-relaxed text-main">@card.Body</p>
+
+                        <!-- 🔍 TASTO PER LA RICERCA SU GOOGLE -->
+                        <div class="mt-3">
+                            <a href="https://www.google.com/search?q=@(string.IsNullOrEmpty(card.KeyWords) ? Uri.EscapeDataString(card.Title) : Uri.EscapeDataString(card.KeyWords))" 
+                                target="_blank" rel="noopener noreferrer" class="d-inline-flex align-items-center gap-2" style="padding: 0 !important;">
+                                <AppIcon Name="globe-check" Size="16" Color="white" />
+                            </a>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(card.DeepDive))
+                        {
+                            <div class="deep-dive-box mt-4 p-3 rounded-3">
+                                <h6 class="fw-bold text-accent mb-1">💡 Per approfondire:</h6>
+                                <p class="small text-muted-custom mb-0">@card.DeepDive</p>
+                            </div>
+                        }
+                    </div>
+
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<style>
+
+</style>
+
+@code {
+    private Guid currentUserId;
+
+    private List<CardModel> cards = new();
+    private bool isLoading = true;
+    private bool shouldInitObserver = false;
+    private DotNetObjectReference<PersonalFeed>? dotNetHelper;
+    private bool isFetchingMore = false; // Previene chiamate multiple contemporanee
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            // 🔑 USIAMO IL TUO METODO QUI!
+            var user = await UserService.GetCurrentUserAsync();
+
+            if (user != null && Guid.TryParse(user.Id, out currentUserId))
+            {
+                cards = await CardService.GetPersonalFeedCardsAsync(currentUserId);
+            }
+            else
+            {
+                cards = new List<CardModel>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AVVIO FEED] Errore: {ex.Message}");
+            cards = new List<CardModel>();
+        }
+        finally
+        {
+            isLoading = false;
+            if (cards.Any())
+            {
+                shouldInitObserver = true;
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (shouldInitObserver)
+        {
+            shouldInitObserver = false;
+            dotNetHelper = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("initCardObserver", dotNetHelper);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnCardVisibleAsync(string cardIdStr)
+    {
+        if (Guid.TryParse(cardIdStr, out Guid cardId) && currentUserId != Guid.Empty)
+        {
+            // 1. Marca come letta per l'utente corrente
+            await CardService.MarkCardAsReadAsync(currentUserId, cardId);
+
+            CardModel? card = cards.FirstOrDefault(x => x.Id == cardId);
+            if (card != null)
+            {
+                int indexCard = cards.IndexOf(card);
+
+                // 2. Se mancano 4 o meno card e non stiamo già scaricando...
+                if (cards.Count - indexCard <= 4 && !isFetchingMore)
+                {
+                    isFetchingMore = true;
+
+                    // Passiamo gli ID attuali per NON riceverli di nuovo
+                    var currentCardIds = cards.Select(c => c.Id).ToList();
+                    var newCards = await CardService.GetPersonalFeedCardsAsync(currentUserId, currentCardIds);
+
+                    if (newCards.Any())
+                    {
+                        // Aggiungiamo solo card che non abbiamo già localmente (doppia sicurezza)
+                        var uniqueNewCards = newCards.Where(nc => !cards.Any(c => c.Id == nc.Id)).ToList();
+
+                        if (uniqueNewCards.Any())
+                        {
+                            cards.AddRange(uniqueNewCards);
+
+                            // Forziamo il re-render del DOM
+                            StateHasChanged();
+
+                            // Diamo un piccolissimo delay per assicurarci che il DOM Blazor abbia disegnato i nuovi elementi prima di agganciare JS
+                            await Task.Delay(50);
+                            await JSRuntime.InvokeVoidAsync("initCardObserver", dotNetHelper);
+                        }
+                    }
+
+                    isFetchingMore = false;
+                }
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        dotNetHelper?.Dispose();
+    }
+}

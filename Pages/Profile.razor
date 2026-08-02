@@ -1,0 +1,260 @@
+﻿@page "/profile"
+@using Supabase.Gotrue;
+@using MicroLearning.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject UserService UserService
+
+<div class="container py-4" style="max-width: 500px;">
+    <AuthorizeView>
+        <Authorized>
+            <!-- AUTHENTICATED USER CARD -->
+            <div class="theme-card p-4 rounded-4 shadow-sm text-center">
+                <div class="mb-3">
+                    <div>
+                        <img class="avatar-circle d-inline-flex align-items-center justify-content-center" src="https://api.dicebear.com/10.x/identicon/svg?seed=@(loggedUser?.Id ?? new Guid().ToString())" alt="Avatar" />
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-1 text-main">Welcome back!</h4>
+                <p class="text-muted-custom small mb-4">@(loggedUser?.Email ?? "")</p>
+
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-danger btn-lg rounded-3 fw-semibold" @onclick="HandleLogout">
+                        <i class="bi bi-box-arrow-right me-2"></i> Log out
+                    </button>
+                </div>
+            </div>
+        </Authorized>
+
+        <NotAuthorized Context="authContext">
+            <!-- AUTHENTICATION CARD (LOGIN / REGISTER) -->
+            <div class="theme-card p-4 rounded-4 shadow-sm">
+
+                <!-- TAB SWITCH LOGIN / REGISTER -->
+                <div class="tab-switch-container p-1 rounded-3 mb-4 d-flex gap-1">
+                    <button type="button"
+                            class="btn flex-fill rounded-2 fw-bold transition-all @(isLogin ? "tab-active" : "tab-inactive")"
+                            @onclick="() => SetTab(true)">
+                        Log In
+                    </button>
+                    <button type="button"
+                            class="btn flex-fill rounded-2 fw-bold transition-all @(!isLogin ? "tab-active" : "tab-inactive")"
+                            @onclick="() => SetTab(false)">
+                        Sign Up
+                    </button>
+                </div>
+
+                <h3 class="fw-bold text-center mb-1 text-main">@(isLogin ? "Log in to your account" : "Create an account")</h3>
+                <p class="text-center text-muted-custom small mb-4">
+                    @(isLogin ? "Enter your credentials to continue" : "Sign up to save and customize your topics")
+                </p>
+
+                <!-- ERROR / SUCCESS MESSAGES -->
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger alert-dismissible fade show rounded-3 small py-2 mb-3" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>@errorMessage
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(successMessage))
+                {
+                    <div class="alert alert-success alert-dismissible fade show rounded-3 small py-2 mb-3" role="alert">
+                        <i class="bi bi-check-circle-fill me-2"></i>@successMessage
+                    </div>
+                }
+
+                <!-- SINGLE FORM -->
+                <EditForm Model="authModel" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-floating mb-3">
+                        <InputText id="email" @bind-Value="authModel.Email" class="form-control custom-input rounded-3" placeholder="name@example.com" />
+                        <label for="email" class="custom-label">Email Address</label>
+                        <ValidationMessage For="@(() => authModel.Email)" class="text-danger small ms-1" />
+                    </div>
+
+                    <div class="form-floating mb-4">
+                        <InputText id="password" type="password" @bind-Value="authModel.Password" class="form-control custom-input rounded-3" placeholder="Password" />
+                        <label for="password" class="custom-label">Password</label>
+                        <ValidationMessage For="@(() => authModel.Password)" class="text-danger small ms-1" />
+                    </div>
+
+                    <button type="submit" class="btn btn-accent btn-lg w-100 rounded-3 fw-bold py-2 shadow-sm" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span>Processing...</span>
+                        }
+                        else
+                        {
+                            <span>@(isLogin ? "Log In" : "Create Account")</span>
+                        }
+                    </button>
+                </EditForm>
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
+
+<style>
+
+    .main-content {
+        align-content: center;
+    }
+
+    /* Card tematica */
+    .theme-card {
+        background-color: var(--surface-card);
+        border: 2px solid var(--border-color);
+        color: var(--text-main);
+    }
+
+    /* Testi tematici */
+    .text-main {
+        color: var(--text-main) !important;
+    }
+
+    .text-muted-custom {
+        color: var(--text-muted) !important;
+    }
+
+    /* Avatar utente loggato */
+    .avatar-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+    }
+
+    /* Tasto Inattivo (Blu Scuro) */
+    .tab-inactive {
+        background-color: #1E293B !important;
+        color: var(--text-main) !important;
+        border: 1px solid var(--border-color);
+    }
+
+        .tab-inactive:hover {
+            background-color: #334155 !important;
+        }
+
+    /* Tasto Attivo (Colore di Accent) */
+    .tab-active {
+        background-color: var(--accent) !important;
+        color: #ffffff !important;
+        border: 1px solid var(--accent);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Pulsante principale di invio form */
+    .btn-accent {
+        background-color: var(--accent);
+        color: #ffffff;
+        border: none;
+    }
+
+        .btn-accent:hover {
+            opacity: 0.9;
+            color: #ffffff;
+        }
+
+    /* Input personalizzati per il tema */
+    .custom-input {
+        background-color: var(--bg-primary) !important;
+        color: var(--text-main) !important;
+        border: 1px solid var(--border-color) !important;
+    }
+
+        .custom-input:focus {
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 0.25rem rgba(137, 54, 204, 0.25) !important;
+        }
+
+    .custom-label {
+        color: var(--text-muted) !important;
+    }
+</style>
+
+@code {
+    private AuthModel authModel = new();
+    private bool isLogin = true;
+    private bool isLoading = false;
+    private string? errorMessage;
+    private string? successMessage;
+    private User? loggedUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            loggedUser = await UserService.GetCurrentUserAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AVVIO FEED] Errore: {ex.Message}");
+        }
+    }
+
+    private void SetTab(bool showLogin)
+    {
+        isLogin = showLogin;
+        errorMessage = null;
+        successMessage = null;
+    }
+
+    private async Task HandleSubmit()
+    {
+        isLoading = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            if (isLogin)
+            {
+                bool success = await UserService.LoginAsync(authModel.Email, authModel.Password);
+                if (!success)
+                {
+                    errorMessage = "Credenziali non valide o email non ancora confermata.";
+                }
+            }
+            else
+            {
+                bool registered = await UserService.RegisterAsync(authModel.Email, authModel.Password);
+                if (registered)
+                {
+                    successMessage = "Registrazione completata! Controlla la tua email per confermare l'account.";
+                    isLogin = true;
+                }
+                else
+                {
+                    errorMessage = "Impossibile completare la registrazione. L'email potrebbe essere già in uso.";
+                }
+            }
+
+            loggedUser = await UserService.GetCurrentUserAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Si è verificato un errore: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleLogout()
+    {
+        await UserService.LogoutAsync();
+        loggedUser = null;
+    }
+
+    public class AuthModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "L'email è obbligatoria")]
+        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Inserisci un'email valida")]
+        public string Email { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "La password è obbligatoria")]
+        [System.ComponentModel.DataAnnotations.MinLength(6, ErrorMessage = "La password deve contenere almeno 6 caratteri")]
+        public string Password { get; set; } = string.Empty;
+    }
+}

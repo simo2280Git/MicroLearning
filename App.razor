@@ -1,0 +1,49 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    <!-- Se l'utente non è autenticato e prova ad accedere a una pagina [Authorize], viene reindirizzato qui -->
+                    <p>Accesso non autorizzato. Reindirizzamento al Login...</p>
+                    <MicroLearning.Components.RedirectToLogin />
+                </NotAuthorized>
+            </AuthorizeRouteView>
+        </Found>
+        <NotFound>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <p>Pagina non trovata.</p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
+
+<script>
+    let cardObserver = null;
+    window.initCardObserver = (dotNetHelper) => {
+        // Se c'è già un observer attivo, disattivalo prima di ricrearlo
+        if (cardObserver) {
+            cardObserver.disconnect();
+        }
+
+        const cards = document.querySelectorAll('.tiktok-card-item');
+        if (!cards.length) return;
+
+        cardObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const cardId = entry.target.getAttribute('data-card-id');
+                    if (cardId) {
+                        dotNetHelper.invokeMethodAsync('OnCardVisibleAsync', cardId);
+                    }
+                }
+            });
+        }, {
+            root: document.querySelector('.tiktok-feed-container'),
+            threshold: 0.6 // La card deve essere visibile almeno al 60%
+        });
+
+        cards.forEach(card => cardObserver.observe(card));
+    };
+</script>

@@ -1,0 +1,14 @@
+# Cartelle temporanee di Visual Studio
+.vs/
+
+# Cartelle di output e build di .NET
+bin/
+obj/
+out/
+output/
+release/
+
+# User settings
+*.user
+*.userosscache
+*.sln.docstates

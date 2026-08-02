@@ -1,0 +1,10 @@
+﻿@page "/"
+@inject NavigationManager NavigationManager
+
+@code {
+    protected override void OnInitialized()
+    {
+        // Reindirizza l'utente alla pagina /discover subito prima del rendering
+        NavigationManager.NavigateTo("discover", replace: true);
+    }
+}

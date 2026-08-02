@@ -1,0 +1,57 @@
+﻿@using MicroLearning.Components.UI
+@inject NavigationManager NavManager
+
+<nav class="bottom-nav">
+    <NavLink class="nav-item" href="discover">
+        <div style="margin-bottom: 2px;"><AppIcon Name="compass" Size="24" Color="white" /></div>
+    </NavLink>
+    <NavLink class="nav-item" href="personal">
+        <div style="margin-bottom: 2px;"><AppIcon Name="lightbulb" Size="24" Color="white" /></div>
+    </NavLink>
+    <NavLink class="nav-item" href="profile">
+        <div style="margin-bottom: 2px;"><AppIcon Name="user-round" Size="24" Color="white" /></div>
+    </NavLink>
+    <NavLink class="nav-item" href="settings">
+        <div style="margin-bottom: 2px;"><AppIcon Name="settings" Size="24" Color="white" /></div>
+    </NavLink>
+</nav>
+
+<style>
+    .bottom-nav {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: var(--nav-height, 65px);
+        background-color: var(--surface-card);
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 100;
+        padding-bottom: env(safe-area-inset-bottom + 2);
+        transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+
+    .nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-decoration: none;
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+        .nav-item .icon {
+            font-size: 1.25rem;
+            margin-bottom: 2px;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+            font-weight: 700;
+            transform: translateY(-2px);
+        }
+</style>
