@@ -1,11 +1,11 @@
 {
   "mainAssemblyName": "MicroLearning",
   "resources": {
-    "hash": "sha256-GNq4KoupXHp/ltS3cku5kZiOJunHZJs2cv8FNT9TsJo=",
+    "hash": "sha256-ZKyEFmg+EPuLeRqIWFviXz8zHJ/GkwPWH/zf55SDYfY=",
     "fingerprinting": {
       "BirdMessenger.dem0t9u7so.wasm": "BirdMessenger.wasm",
       "Microsoft.AspNetCore.Authorization.l70yprr230.wasm": "Microsoft.AspNetCore.Authorization.wasm",
-      "Microsoft.AspNetCore.Components.7xabm2581r.wasm": "Microsoft.AspNetCore.Components.wasm",
+      "Microsoft.AspNetCore.Components.2npbdd74zd.wasm": "Microsoft.AspNetCore.Components.wasm",
       "Microsoft.AspNetCore.Components.Authorization.gtg2riohx5.wasm": "Microsoft.AspNetCore.Components.Authorization.wasm",
       "Microsoft.AspNetCore.Components.Forms.mb1uteaoob.wasm": "Microsoft.AspNetCore.Components.Forms.wasm",
       "Microsoft.AspNetCore.Components.Web.4bn2msmj0k.wasm": "Microsoft.AspNetCore.Components.Web.wasm",
@@ -98,7 +98,7 @@
       "System.v2bpr4wvug.wasm": "System.wasm",
       "netstandard.opdk8cywp0.wasm": "netstandard.wasm",
       "System.Private.CoreLib.a9y60jxcby.wasm": "System.Private.CoreLib.wasm",
-      "MicroLearning.qbj3zqqnaf.wasm": "MicroLearning.wasm",
+      "MicroLearning.b4cdi5v9jt.wasm": "MicroLearning.wasm",
       "dotnet.js": "dotnet.js",
       "dotnet.native.mf92lzu2d1.js": "dotnet.native.js",
       "dotnet.native.6sm8j8phll.wasm": "dotnet.native.wasm",
@@ -128,7 +128,7 @@
     "assembly": {
       "BirdMessenger.dem0t9u7so.wasm": "sha256-m+1kYZEwY5mslxWc3OotJ0ZuZKdpeUtWi/7Zi90Aud8=",
       "Microsoft.AspNetCore.Authorization.l70yprr230.wasm": "sha256-kWp+wgpLKh5/j1KAY5ddjP3Eh8gaF2mPvVXv2qMD0uM=",
-      "Microsoft.AspNetCore.Components.7xabm2581r.wasm": "sha256-C3ortqxfdG5cnGZ0IC69rkyruqLepseIHx4T4PENsDE=",
+      "Microsoft.AspNetCore.Components.2npbdd74zd.wasm": "sha256-crjmusKeK+KAazX9SspFB62uHms9V++ldZUEw5hdkVQ=",
       "Microsoft.AspNetCore.Components.Authorization.gtg2riohx5.wasm": "sha256-XPuZIdRQFsu+fnbuBLWsvajexpgKtYmByJAakp7P0bs=",
       "Microsoft.AspNetCore.Components.Forms.mb1uteaoob.wasm": "sha256-zsjtqRsvuTzPxD746hSZCMN6q4XjXvX7JY7eNWc/HNo=",
       "Microsoft.AspNetCore.Components.Web.4bn2msmj0k.wasm": "sha256-gMhJcxrV/hIVP+P5fucacoxDammxw65hUihRdBpGpdw=",
@@ -219,7 +219,7 @@
       "System.Xml.XDocument.d11i6eblzf.wasm": "sha256-P3wk7Jx9HviqxiOk5JLiI3fUi55ZmWM0jXliRdMfzq4=",
       "System.v2bpr4wvug.wasm": "sha256-V0+qqJsDHNUBCJjD4bkeDVr+f+Orz+wNldNNIxrsd+4=",
       "netstandard.opdk8cywp0.wasm": "sha256-bFrsJFZQPqRfEpcksF0eWCZfwGetbXmeVzaqTLU3OHQ=",
-      "MicroLearning.qbj3zqqnaf.wasm": "sha256-lo/df4VnFIIZjhcGnoJ8bNan5/2kF6qbkNsGSaGTKgQ="
+      "MicroLearning.b4cdi5v9jt.wasm": "sha256-mzSm00koakNQ3sQFHh4re2ho24K65cYMjSOsxsrldOk="
     }
   },
   "cacheBootResources": true,
