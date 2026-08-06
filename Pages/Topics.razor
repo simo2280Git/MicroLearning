@@ -1,0 +1,272 @@
+﻿@page "/topics"
+@using System.Security.Claims
+@using MicroLearning.Components.UI
+@using MicroLearning.Models
+@using MicroLearning.Models.Context
+@using MicroLearning.Services
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject TopicService TopicService
+@inject UserService UserService
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthStateProvider
+@attribute [Authorize]
+
+<PageTitle>MicroLearning Feed</PageTitle>
+
+@if (isLoading)
+{
+    <div class="feed-state-container">
+        <div class="spinner-border text-accent mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+        <p class="fw-semibold">Loading...</p>
+    </div>
+}
+else
+{
+    <div class="topics-card-container">
+        <div class="topics-card">
+
+            <!-- Sezione Input per Aggiungere Topic -->
+            <div class="add-topic-container">
+                <input type="text"
+                       class="topic-input"
+                       placeholder="Aggiungi un nuovo topic..."
+                       @bind="newTopicName"
+                       @bind:event="oninput"
+                       @onkeyup="HandleKeyUp" />
+                <button class="btn-add" @onclick="AddTopic" disabled="@string.IsNullOrWhiteSpace(newTopicName)">
+                    <AppIcon Name="circle-plus" Size="20" Color="white" />
+                </button>
+            </div>
+
+            <h3 class="card-title">Your Topics</h3>
+
+            @if (!topics.Any())
+            {
+                <div class="empty-state text-center p-4">
+                    <i class="bi bi-journal-x display-1 text-muted-custom mb-3"></i>
+                    <h4 class="text-main fw-bold">No Topics available</h4>
+                    <p class="text-muted-custom">Make sure to follow at least one Topic!</p>
+                </div>
+            }
+            else
+            {
+                <ul class="topics-list">
+                    @foreach (var topic in topics)
+                    {
+                        <li class="topic-item">
+                            <span class="topic-name">@topic?.Name</span>
+                            <button class="btn-delete" @onclick="() => DeleteTopic(topic)" title="Elimina topic">
+                                <AppIcon Name="trash" Size="18" Color="white" />
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+}
+
+<style>
+    .feed-state-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 50vh;
+        color: var(--text-main, #F1F5F9);
+    }
+
+    .topics-card-container {
+        padding: 16px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .topics-card {
+        width: 100%;
+        max-width: 600px;
+        background-color: var(--surface-card, #1A212D);
+        border: 1px solid var(--border-color, #263142);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Input Add Topic */
+    .add-topic-container {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 24px;
+    }
+
+    .topic-input {
+        flex: 1;
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-color, #263142);
+        border-radius: 12px;
+        padding: 12px 16px;
+        color: var(--text-main, #F1F5F9);
+        font-size: 0.95rem;
+        outline: none;
+        transition: border-color 0.2s ease;
+    }
+
+        .topic-input:focus {
+            border-color: var(--accent, #8936cc);
+        }
+
+    .btn-add {
+        background-color: var(--accent, #8936cc);
+        border: none;
+        border-radius: 12px;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: opacity 0.2s ease, transform 0.1s ease;
+    }
+
+        .btn-add:hover:not(:disabled) {
+            opacity: 0.9;
+            transform: scale(1.03);
+        }
+
+        .btn-add:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+    .card-title {
+        color: var(--text-main, #F1F5F9);
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border-color, #263142);
+    }
+
+    .topics-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .topic-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        background-color: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border-color, #263142);
+        border-radius: 12px;
+        transition: background-color 0.2s ease;
+    }
+
+        .topic-item:hover {
+            background-color: rgba(255, 255, 255, 0.06);
+        }
+
+    .topic-name {
+        color: var(--text-main, #F1F5F9);
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    /* Bottone eliminazione */
+    .btn-delete {
+        background: transparent;
+        border: none;
+        padding: 6px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0.6;
+        transition: all 0.2s ease;
+    }
+
+        .btn-delete:hover {
+            opacity: 1;
+            background-color: rgba(239, 68, 68, 0.2); /* Sfondo rosso tenue al passaggio */
+        }
+</style>
+
+@code {
+    private Guid currentUserId;
+
+    private List<Topic?> topics = new();
+    private bool isLoading = true;
+    private string newTopicName = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            // 🔑 USIAMO IL TUO METODO QUI!
+            var user = await UserService.GetCurrentUserAsync();
+
+            if (user != null && Guid.TryParse(user.Id, out currentUserId))
+            {
+                topics = await TopicService.GetUserTopicsAsync(currentUserId);
+            }
+            else
+            {
+                topics = new List<Topic?>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AVVIO FEED] Errore: {ex.Message}");
+            topics = new List<Topic?>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    private async Task AddTopic()
+    {
+        if (string.IsNullOrWhiteSpace(newTopicName)) return;
+
+        try
+        {
+            topics = await TopicService.AddUserTopicAsync(currentUserId, newTopicName);
+            newTopicName = "";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AVVIO FEED] Errore: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteTopic(Topic topic)
+    {
+        try
+        {
+            topics = await TopicService.RemoveUserTopicAsync(currentUserId, topic.Id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AVVIO FEED] Errore: {ex.Message}");
+        }
+    }
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await AddTopic();
+        }
+    }
+}

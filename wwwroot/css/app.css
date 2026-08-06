@@ -191,27 +191,54 @@ h1, h2, h3, h4, h5, h6 {
         display: none;
     }
 
-/* COMPONENTI PERSONALIZZATI CON LA PALETTE */
+/* Badge Topic con stile Palette e supporto testo multi-riga */
 .badge-topic {
-    /* Sfondo trasparente basato sull'accento */
     background-color: color-mix(in srgb, var(--accent) 15%, transparent);
-    color: var(--accent); /* Testo dello stesso colore dell'accento */
+    color: var(--accent);
     border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
     font-weight: 600;
     font-size: 0.68rem;
-    line-height: 1.35; /* Interlinea bilanciata per le righe multiple */
-    padding: 0.35rem 0.85rem;
-    border-radius: 0.85rem; /* Un raggio fisso morbido al posto di 50rem rende meglio sui testi a più righe */
-    /* Permette l'andata a capo e l'adattamento della larghezza */
+    line-height: 1.35;
+    padding: 0.35rem 0.6rem 0.35rem 0.85rem; /* Padding destro leggermente ridotto per bilanciare l'icona */
+    border-radius: 0.85rem;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    width: fit-content; /* Si adatta alla lunghezza del testo, ma senza superare il contenitore */
-    max-width: 100%; /* Può riempire tutta la larghezza disponibile della pagina o della card */
-    /* Abilita il wrap nativo del testo */
+    gap: 8px;
+    width: fit-content;
+    max-width: 100%;
     white-space: normal;
-    word-break: break-word; /* Evita che parole lunghissime escano dai bordi */
+    word-break: break-word;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
+
+/* Bottone Aggiungi/Seguito all'interno del Badge */
+.btn-add-topic {
+    background: transparent;
+    border: none;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0; /* Impedisce al bottone di schiacciarsi se il testo va su più righe */
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    opacity: 0.85;
+}
+
+    .btn-add-topic:hover:not(:disabled) {
+        opacity: 1;
+        transform: scale(1.15);
+    }
+
+    .btn-add-topic:active:not(:disabled) {
+        transform: scale(0.95);
+    }
+
+    /* Stato quando il topic è già seguito */
+    .btn-add-topic.followed {
+        cursor: default;
+        opacity: 1;
+    }
 
 .deep-dive-box {
     background-color: var(--bg-primary);

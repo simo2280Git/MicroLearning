@@ -1,10 +1,13 @@
 ﻿@page "/discover"
+@using MicroLearn.Models
 @using MicroLearning.Components.UI
 @using MicroLearning.Models
+@using MicroLearning.Models.Context
 @using MicroLearning.Services
 @using Microsoft.AspNetCore.Authorization
 @inject CardService CardService
 @inject UserService UserService
+@inject TopicService TopicService
 @inject IJSRuntime JSRuntime
 @implements IDisposable
 @using System.Security.Claims
@@ -38,11 +41,30 @@ else
             <div class="tiktok-card-item" data-card-id="@card.Id">
                 <div class="card-content-wrapper">
 
-                    <!-- Header: Topic Badge -->
+                    <!-- Header: Topic Badge con Cambio Dinamico Icona -->
                     <div class="mb-3">
-                        <span class="badge-topic text-uppercase tracking-wider">
-                            @card.TopicName
-                        </span>
+                        <div class="badge-topic text-uppercase tracking-wider">
+                            <span>@card.TopicName</span>
+
+                            @if (IsTopicFollowed(card.TopicId))
+                            {
+                                <button type="button"
+                                        class="btn-add-topic followed"
+                                        disabled
+                                        title="Argomento già seguito">
+                                    <AppIcon Name="check" Size="18" Color="white" />
+                                </button>
+                            }
+                            else
+                            {
+                                <button type="button"
+                                        class="btn-add-topic"
+                                        @onclick="() => AddTopic(card.TopicId)"
+                                        title="Aggiungi topic ai tuoi preferiti">
+                                    <AppIcon Name="circle-plus" Size="18" Color="white" />
+                                </button>
+                            }
+                        </div>
                     </div>
 
                     <!-- Titolo e Sottotitolo -->
@@ -55,8 +77,8 @@ else
 
                         <!-- 🔍 TASTO PER LA RICERCA SU GOOGLE -->
                         <div class="mt-3">
-                            <a href="https://www.google.com/search?q=@(string.IsNullOrEmpty(card.KeyWords) ? Uri.EscapeDataString(card.Title) : Uri.EscapeDataString(card.KeyWords))" 
-                                target="_blank" rel="noopener noreferrer" class="d-inline-flex align-items-center gap-2" style="padding: 0 !important;">
+                            <a href="https://www.google.com/search?q=@(string.IsNullOrEmpty(card.KeyWords) ? Uri.EscapeDataString(card.Title) : Uri.EscapeDataString(card.KeyWords))"
+                               target="_blank" rel="noopener noreferrer" class="d-inline-flex align-items-center gap-2" style="padding: 0 !important;">
                                 <AppIcon Name="globe-check" Size="16" Color="white" />
                             </a>
                         </div>
@@ -77,12 +99,13 @@ else
 }
 
 <style>
-   
+
 </style>
 
 @code {
     private Guid currentUserId;
     private List<CardModel> cards = new();
+    private List<Topic?> userTopics = new();
     private bool isLoading = true;
     private bool shouldInitObserver = false;
     private DotNetObjectReference<DiscoverFeed>? dotNetHelper;
@@ -94,12 +117,12 @@ else
         {
             isLoading = true;
 
-            // 🔑 USIAMO IL TUO METODO QUI!
             var user = await UserService.GetCurrentUserAsync();
 
             if (user != null && Guid.TryParse(user.Id, out currentUserId))
             {
                 cards = await CardService.GetFeedCardsAsync(currentUserId);
+                userTopics = await TopicService.GetUserTopicsAsync(currentUserId);
             }
             else
             {
@@ -121,12 +144,32 @@ else
         }
     }
 
+    private bool IsTopicFollowed(Guid topicId)
+    {
+        return userTopics.Any(t => t != null && t.Id == topicId);
+    }
+
+    private async Task AddTopic(Guid topicId)
+    {
+        // Controllo di sicurezza: se è già seguito non fa nulla
+        if (IsTopicFollowed(topicId)) return;
+
+        try
+        {
+            userTopics = await TopicService.AddUserTopicAsync(currentUserId, topicId);
+            StateHasChanged(); // Aggiorna immediatamente l'interfaccia
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ADD TOPIC] Errore: {ex.Message}");
+        }
+    }
+
     [JSInvokable]
     public async Task OnCardVisibleAsync(string cardIdStr)
     {
         if (Guid.TryParse(cardIdStr, out Guid cardId) && currentUserId != Guid.Empty)
         {
-            // 🔑 Usiamo currentUserId al posto di TestUserId
             await CardService.MarkCardAsReadAsync(currentUserId, cardId);
 
             CardModel? card = cards.FirstOrDefault(x => x.Id == cardId);
@@ -140,7 +183,6 @@ else
 
                     var currentCardIds = cards.Select(c => c.Id).ToList();
 
-                    // 🔑 Usiamo currentUserId anche qui
                     var newCards = await CardService.GetFeedCardsAsync(currentUserId, currentCardIds);
 
                     if (newCards.Any())

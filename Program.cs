@@ -25,6 +25,7 @@ builder.Services.AddScoped(sp =>
 // REGISTRAZIONE SERVICES
 builder.Services.AddScoped<CardService>();
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<TopicService>();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 
