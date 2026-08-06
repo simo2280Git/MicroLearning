@@ -48,20 +48,14 @@ else
 
                             @if (IsTopicFollowed(card.TopicId))
                             {
-                                <button type="button"
-                                        class="btn-add-topic followed"
-                                        disabled
-                                        title="Argomento già seguito">
-                                    <AppIcon Name="check" Size="18" Color="white" />
+                                <button type="button" class="btn-add-topic followed" disabled title="Argomento già seguito">
+                                    <AppIcon Name="check" Size="16" Color="white" />
                                 </button>
                             }
                             else
                             {
-                                <button type="button"
-                                        class="btn-add-topic"
-                                        @onclick="() => AddTopic(card.TopicId)"
-                                        title="Aggiungi topic ai tuoi preferiti">
-                                    <AppIcon Name="circle-plus" Size="18" Color="white" />
+                                <button type="button" class="btn-add-topic" @onclick="() => AddTopic(card.TopicId)" title="Aggiungi topic ai tuoi preferiti">
+                                    <AppIcon Name="circle-plus" Size="16" Color="white" />
                                 </button>
                             }
                         </div>

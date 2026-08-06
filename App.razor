@@ -1,4 +1,6 @@
-﻿@using Microsoft.AspNetCore.Components.Authorization
+﻿@using MicroLearning.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject UserService UserService
 
 <CascadingAuthenticationState>
     <Router AppAssembly="@typeof(App).Assembly">
@@ -47,3 +49,11 @@
         cards.forEach(card => cardObserver.observe(card));
     };
 </script>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // Ripristina la sessione all'apertura o al refresh dell'app
+        await UserService.InitializeAsync();
+    }
+}
