@@ -1,25 +1,43 @@
-﻿@using MicroLearning.Services
+﻿@using MicroLearning.Components
+@using MicroLearning.Services
 @using Microsoft.AspNetCore.Components.Authorization
 @inject UserService UserService
 
 <CascadingAuthenticationState>
-    <Router AppAssembly="@typeof(App).Assembly">
+    <Router AppAssembly="@typeof(Program).Assembly">
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
                 <NotAuthorized>
-                    <!-- Se l'utente non è autenticato e prova ad accedere a una pagina [Authorize], viene reindirizzato qui -->
-                    <p>Accesso non autorizzato. Reindirizzamento al Login...</p>
-                    <MicroLearning.Components.RedirectToLogin />
+                    <!-- Mostrato solo se NON autenticato -->
+                    <RedirectToLogin />
                 </NotAuthorized>
+                <Authorizing>
+                    <!-- Mostrato durante la lettura da localStorage per evitare lo sfarfallio -->
+                    <div class="auth-loading-screen">
+                        <div class="spinner-border text-accent" style="width: 3rem; height: 3rem;" role="status"></div>
+                    </div>
+                </Authorizing>
             </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
         </Found>
         <NotFound>
+            <PageTitle>Not found</PageTitle>
             <LayoutView Layout="@typeof(MainLayout)">
-                <p>Pagina non trovata.</p>
+                <p role="alert">Pagina non trovata.</p>
             </LayoutView>
         </NotFound>
     </Router>
 </CascadingAuthenticationState>
+
+<style>
+    .auth-loading-screen {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background-color: var(--bg-primary, #0F141C);
+    }
+</style>
 
 <script>
     let cardObserver = null;
@@ -49,11 +67,3 @@
         cards.forEach(card => cardObserver.observe(card));
     };
 </script>
-
-@code {
-    protected override async Task OnInitializedAsync()
-    {
-        // Ripristina la sessione all'apertura o al refresh dell'app
-        await UserService.InitializeAsync();
-    }
-}

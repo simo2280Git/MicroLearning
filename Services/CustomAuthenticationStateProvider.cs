@@ -1,46 +1,63 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Components.Authorization;
-using Supabase.Gotrue;
+using Microsoft.JSInterop;
 
 namespace MicroLearning.Services
 {
     public class CustomAuthStateProvider : AuthenticationStateProvider
     {
         private readonly Supabase.Client _supabase;
+        private readonly IJSRuntime _jsRuntime;
+        private const string AccessTokenKey = "supabase_access_token";
+        private const string RefreshTokenKey = "supabase_refresh_token";
 
-        public CustomAuthStateProvider(Supabase.Client supabase)
+        public CustomAuthStateProvider(Supabase.Client supabase, IJSRuntime jsRuntime)
         {
             _supabase = supabase;
-
-            // Ascolta i cambiamenti di stato di Supabase (Login, Logout, Token Refresh)
-            _supabase.Auth.AddStateChangedListener((sender, state) =>
-            {
-                NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
-            });
+            _jsRuntime = jsRuntime;
         }
 
-        public override Task<AuthenticationState> GetAuthenticationStateAsync()
+        public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
-            var currentUser = _supabase.Auth.CurrentUser;
-
-            if (currentUser == null)
+            try
             {
-                // Utente anonimo / Non autenticato
-                var anonymous = new ClaimsPrincipal(new ClaimsIdentity());
-                return Task.FromResult(new AuthenticationState(anonymous));
+                // Se non c'è una sessione in memoria, prova a leggerla da localStorage
+                if (_supabase.Auth.CurrentSession == null)
+                {
+                    var accessToken = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", AccessTokenKey);
+                    var refreshToken = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", RefreshTokenKey);
+
+                    if (!string.IsNullOrEmpty(accessToken) && !string.IsNullOrEmpty(refreshToken))
+                    {
+                        await _supabase.Auth.SetSession(accessToken, refreshToken);
+                    }
+                }
+
+                var user = _supabase.Auth.CurrentUser;
+                if (user != null)
+                {
+                    var claims = new[]
+                    {
+                        new Claim(ClaimTypes.NameIdentifier, user.Id ?? string.Empty),
+                        new Claim(ClaimTypes.Email, user.Email ?? string.Empty)
+                    };
+
+                    var identity = new ClaimsIdentity(claims, "SupabaseAuth");
+                    return new AuthenticationState(new ClaimsPrincipal(identity));
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Auth Provider Error]: {ex.Message}");
             }
 
-            // Utente autenticato: creiamo le Identity Claims per Blazor
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, currentUser.Id ?? string.Empty),
-                new Claim(ClaimTypes.Email, currentUser.Email ?? string.Empty)
-            };
+            // Utente non autenticato
+            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+        }
 
-            var identity = new ClaimsIdentity(claims, "SupabaseAuth");
-            var user = new ClaimsPrincipal(identity);
-
-            return Task.FromResult(new AuthenticationState(user));
+        public void NotifyUserAuthenticationState()
+        {
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
         }
     }
 }
