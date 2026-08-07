@@ -17,7 +17,7 @@
 /* ===================================================
    OVERRIDE MEDIA QUERY: Passa al chiaro se il dispositivo lo richiede
    =================================================== */
-@media (prefers-color-scheme: light) {
+/*@media (prefers-color-scheme: light) {
     :root {
         --bg-primary: #FAF9F5;
         --surface-card: #FFFFFF;
@@ -26,7 +26,7 @@
         --accent: #3D6B56;
         --border-color: #E8E6DF;
     }
-}
+}*/
 
 /* Forzatura manuale tramite attributo [data-theme] */
 [data-theme="dark"] {
