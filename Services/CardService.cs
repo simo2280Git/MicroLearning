@@ -2,6 +2,10 @@
 using MicroLearning.Models;
 using MicroLearning.Models.Context;
 using System.Net.Http.Json;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Text.Json;
+using Microsoft.AspNetCore.Components.WebAssembly.Http; 
 
 namespace MicroLearning.Services
 {
@@ -395,5 +399,88 @@ namespace MicroLearning.Services
                 return new List<Card>();
             }
         }
+
+        public async IAsyncEnumerable<string> GetDeepDiveStreamAsync(
+    Guid cardId,
+    [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var userToken = _db.Auth.CurrentSession?.AccessToken;
+
+            if (string.IsNullOrEmpty(userToken))
+            {
+                Console.WriteLine("[Errore Auth]: Nessun utente loggato.");
+                yield break;
+            }
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"{_supabaseUrl}/functions/v1/generate-deep-dive")
+            {
+                Content = JsonContent.Create(new CardDeepDiveReq { CardId = cardId })
+            };
+
+            // 🚨 FONDAMENTALE PER BLAZOR WASM: Forza il browser a NON bufferizzare la risposta!
+            request.SetBrowserResponseStreamingEnabled(true);
+
+            request.Headers.Add("apikey", _supabaseKey);
+            request.Headers.Add("Authorization", $"Bearer {userToken}");
+
+            HttpResponseMessage? response = null;
+            try
+            {
+                response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+                response.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Errore HTTP DeepDive]: {ex.Message}");
+                yield break;
+            }
+
+            using (response)
+            {
+                using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                using var reader = new StreamReader(stream, Encoding.UTF8);
+
+                string? line;
+                // 🛑 Sostituito (!reader.EndOfStream) con la lettura asincrona riga per riga
+                while ((line = await reader.ReadLineAsync(cancellationToken)) != null)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("data: "))
+                    {
+                        continue;
+                    }
+
+                    var jsonPayload = line["data: ".Length..].Trim();
+
+                    if (jsonPayload == "[DONE]")
+                    {
+                        break;
+                    }
+
+                    string? extractedText = null;
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(jsonPayload);
+                        extractedText = doc.RootElement
+                            .GetProperty("candidates")[0]
+                            .GetProperty("content")
+                            .GetProperty("parts")[0]
+                            .GetProperty("text")
+                            .GetString();
+                    }
+                    catch
+                    {
+                        // Ignora pacchetti non ancora completi
+                    }
+
+                    if (!string.IsNullOrEmpty(extractedText))
+                    {
+                        yield return extractedText;
+                    }
+                }
+            }
+        }
+
     }
 }

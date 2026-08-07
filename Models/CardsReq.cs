@@ -13,6 +13,12 @@ public class CardsReq
     public List<TopicItem> Requests { get; set; } = new();
 }
 
+public class CardDeepDiveReq
+{
+    [JsonPropertyName("card_id")]
+    public Guid CardId { get; set; }
+}
+
 public class TopicItem
 {
     [JsonPropertyName("topic_id")]

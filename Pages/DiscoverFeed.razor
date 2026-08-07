@@ -69,21 +69,17 @@ else
                     <div class="card-body-scrollable">
                         <p class="fs-6 leading-relaxed text-main">@card.Body</p>
 
-                        <!-- 🔍 TASTO PER LA RICERCA SU GOOGLE -->
-                        <div class="mt-3">
+                        <!-- 🔍 AZIONI CARD (RICERCA GOOGLE + MODAL DEEP DIVE) -->
+                        <div class="d-flex align-items-center gap-2 mt-3">
                             <a href="https://www.google.com/search?q=@(string.IsNullOrEmpty(card.KeyWords) ? Uri.EscapeDataString(card.Title) : Uri.EscapeDataString(card.KeyWords))"
-                               target="_blank" rel="noopener noreferrer" class="d-inline-flex align-items-center gap-2" style="padding: 0 !important;">
+                               target="_blank" rel="noopener noreferrer" class="action-btn" title="Cerca su Google">
                                 <AppIcon Name="globe-check" Size="16" Color="white" />
                             </a>
-                        </div>
 
-                        @if (!string.IsNullOrEmpty(card.DeepDive))
-                        {
-                            <div class="deep-dive-box mt-4 p-3 rounded-3">
-                                <h6 class="fw-bold text-accent mb-1">💡 Per approfondire:</h6>
-                                <p class="small text-muted-custom mb-0">@card.DeepDive</p>
-                            </div>
-                        }
+                            <button type="button" class="action-btn" @onclick="() => OpenDeepDive(card)" title="Approfondisci con AI">
+                                <AppIcon Name="message-circle-question-mark" Size="16" Color="white" />
+                            </button>
+                        </div>
                     </div>
 
                 </div>
@@ -92,8 +88,47 @@ else
     </div>
 }
 
-<style>
+<!-- 💡 MODAL POPUP APPROFONDIMENTO (DEEP DIVE STREAMING) -->
+@if (selectedCardForDeepDive != null)
+{
+    <div class="modal-backdrop-custom" @onclick="CloseDeepDive">
+        <div class="modal-content-custom" @onclick:stopPropagation="true">
+            <div class="modal-header-custom">
+                <div class="d-flex align-items-center gap-2">
+                    <AppIcon Name="message-circle-question-mark" Size="18" Color="white" />
+                    <h6 class="m-0 fw-bold text-accent">Card DeepDive</h6>
+                </div>
+                <button type="button" class="btn-close-modal" @onclick="CloseDeepDive">
+                    <AppIcon Name="circle-x" Size="20" Color="white" />
+                </button>
+            </div>
+            <div class="modal-body-custom">
+                <h4 class="fw-bold mb-3 text-main">@selectedCardForDeepDive.Title</h4>
 
+                @if (string.IsNullOrEmpty(selectedCardForDeepDive.DeepDive) && isStreaming)
+                {
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-accent mb-2" role="status" style="width: 2.5rem; height: 2.5rem;"></div>
+                        <p class="text-muted-custom small">Inizio generazione in corso...</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="leading-relaxed text-main deep-dive-text">
+                        @selectedCardForDeepDive.DeepDive
+                        @if (isStreaming)
+                        {
+                            <span class="typing-cursor"></span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    
 </style>
 
 @code {
@@ -104,6 +139,9 @@ else
     private bool shouldInitObserver = false;
     private DotNetObjectReference<DiscoverFeed>? dotNetHelper;
     private bool isFetchingMore = false;
+    private CardModel? selectedCardForDeepDive;
+    private bool isStreaming = false;
+    private CancellationTokenSource? cts;
 
     protected override async Task OnInitializedAsync()
     {
@@ -159,6 +197,63 @@ else
         }
     }
 
+    private async Task OpenDeepDive(CardModel card)
+    {
+        selectedCardForDeepDive = card;
+
+        // Se l'approfondimento è già presente, non rilanciamo lo streaming
+        if (!string.IsNullOrEmpty(card.DeepDive))
+        {
+            return;
+        }
+
+        card.DeepDive = string.Empty;
+        isStreaming = true;
+
+        cts?.Cancel();
+        cts = new CancellationTokenSource();
+
+        try
+        {
+            // Consumo dello stream asincrono
+            await foreach (var chunk in CardService.GetDeepDiveStreamAsync(card.Id, cts.Token))
+            {
+                card.DeepDive += chunk;
+
+                // Forziamo il re-render di Blazor ad ogni nuovo pezzo di testo
+                StateHasChanged();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Streaming interrotto dall'utente
+        }
+        catch (Exception ex)
+        {
+            card.DeepDive += "\n\n[Errore durante la generazione dell'approfondimento.]";
+        }
+        finally
+        {
+            isStreaming = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CloseDeepDive()
+    {
+        // Annulla la chiamata HTTP se lo streaming è ancora in corso
+        cts?.Cancel();
+        selectedCardForDeepDive = null;
+        isStreaming = false;
+    }
+
+    public void Dispose()
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+        dotNetHelper?.Dispose();
+
+    }
     [JSInvokable]
     public async Task OnCardVisibleAsync(string cardIdStr)
     {
@@ -209,8 +304,4 @@ else
         }
     }
 
-    public void Dispose()
-    {
-        dotNetHelper?.Dispose();
-    }
 }
