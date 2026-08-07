@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap');
+ï»¿@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap');
 
 /* ===================================================
    PALETTE PREDEFINITA: "Deep Slate & Mint" (Dark)
@@ -65,7 +65,7 @@ html, body {
     -webkit-font-smoothing: antialiased;
 }
 
-/* Applicazione rigorosa della regola del Line-Height per la leggibilità */
+/* Applicazione rigorosa della regola del Line-Height per la leggibilitÃ  */
 p, li, span {
     line-height: 1.75;
 }
@@ -219,7 +219,7 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    flex-shrink: 0; /* Impedisce al bottone di schiacciarsi se il testo va su più righe */
+    flex-shrink: 0; /* Impedisce al bottone di schiacciarsi se il testo va su piÃ¹ righe */
     transition: transform 0.2s ease, opacity 0.2s ease;
     opacity: 0.85;
 }
@@ -233,7 +233,7 @@ h1, h2, h3, h4, h5, h6 {
         transform: scale(0.95);
     }
 
-    /* Stato quando il topic è già seguito */
+    /* Stato quando il topic Ã¨ giÃ  seguito */
     .btn-add-topic.followed {
         cursor: default;
         opacity: 1;
@@ -285,8 +285,8 @@ h1, h2, h3, h4, h5, h6 {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(8px);
+    /*background-color: rgba(0, 0, 0, 0.75);*/
+    backdrop-filter: blur(7px);
     -webkit-backdrop-filter: blur(8px);
     z-index: 1050;
     display: flex;
@@ -295,18 +295,35 @@ h1, h2, h3, h4, h5, h6 {
     padding: 1.25rem;
 }
 
-/* Box della Modal */
+/* Box della Modal a dimensione massima fissa fin dal primo istante */
 .modal-content-custom {
     background-color: var(--surface-card, #1A212D);
     border: 1px solid var(--border-color, #263142);
     border-radius: 20px;
     width: 100%;
-    max-width: 440px;
-    max-height: 80vh;
+    max-width: 480px; /* Stessa larghezza della card del feed */
+    height: 80vh; /* ðŸ‘ˆ Fissa l'altezza al massimo fin dall'apertura */
     display: flex;
     flex-direction: column;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
     animation: modalFadeIn 0.2s ease-out;
+}
+
+.modal-header-custom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color, #263142);
+    flex-shrink: 0; /* Impedisce all'header di schiacciarsi */
+}
+
+.modal-body-custom {
+    padding: 1.25rem;
+    overflow-y: auto;
+    flex: 1; /* Occupa tutto lo spazio verticale rimanente */
+    display: flex;
+    flex-direction: column;
 }
 
 @keyframes modalFadeIn {
@@ -316,23 +333,9 @@ h1, h2, h3, h4, h5, h6 {
     }
 
     to {
-        opacity: 1;
+        opacity: 0.7;
         transform: translateY(0) scale(1);
     }
-}
-
-.modal-header-custom {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border-color, #263142);
-}
-
-.modal-body-custom {
-    padding: 1.25rem;
-    overflow-y: auto;
-    flex: 1;
 }
 
 .btn-close-modal {
@@ -351,24 +354,6 @@ h1, h2, h3, h4, h5, h6 {
         opacity: 1;
     }
 
-.deep-dive-text {
-    white-space: pre-line;
-    font-size: 0.95rem;
-    line-height: 1.7;
-}
-
-/* Cursore lampeggiante tipo terminale/ChatGPT */
-.typing-cursor {
-    display: inline-block;
-    width: 8px;
-    height: 16px;
-    background-color: var(--accent, #3b82f6);
-    margin-left: 4px;
-    vertical-align: middle;
-    animation: blink 0.8s infinite;
-    border-radius: 2px;
-}
-
 @keyframes blink {
     0%, 100% {
         opacity: 1;
@@ -385,4 +370,28 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 0.95rem;
     line-height: 1.7;
     word-break: break-word;
+    /* Rende il flusso visivo morbido ed evita scatti di rendering */
+    transition: all 0.1s ease-out;
+}
+
+/* Cursore elegante di scrittura */
+.typing-cursor {
+    display: inline-block;
+    width: 6px;
+    height: 1.1em;
+    background-color: var(--accent, #8936cc);
+    margin-left: 3px;
+    vertical-align: middle;
+    border-radius: 2px;
+    animation: pulseCursor 0.8s infinite alternate;
+}
+
+@keyframes pulseCursor {
+    0% {
+        opacity: 0.2;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }

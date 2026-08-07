@@ -12,6 +12,7 @@
 @implements IDisposable
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
+@using System.Collections.Concurrent;
 @inject AuthenticationStateProvider AuthStateProvider
 @attribute [Authorize]
 
@@ -142,6 +143,8 @@ else
     private CardModel? selectedCardForDeepDive;
     private bool isStreaming = false;
     private CancellationTokenSource? cts;
+    // Coda thread-safe per accumulare i caratteri in arrivo dalla rete
+    private readonly ConcurrentQueue<char> _charBuffer = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -201,11 +204,8 @@ else
     {
         selectedCardForDeepDive = card;
 
-        // Se l'approfondimento è già presente, non rilanciamo lo streaming
         if (!string.IsNullOrEmpty(card.DeepDive))
-        {
             return;
-        }
 
         card.DeepDive = string.Empty;
         isStreaming = true;
@@ -215,45 +215,89 @@ else
 
         try
         {
-            // Consumo dello stream asincrono
+            // 1. Avviamo in parallelo il task che "digita" a schermo in modo costante
+            var typewriterTask = SmoothTypewriterAsync(card, cts.Token);
+
+            // 2. Leggiamo lo stream di rete e riempiamo la coda
             await foreach (var chunk in CardService.GetDeepDiveStreamAsync(card.Id, cts.Token))
             {
-                card.DeepDive += chunk;
-
-                // Forziamo il re-render di Blazor ad ogni nuovo pezzo di testo
-                StateHasChanged();
+                foreach (var c in chunk)
+                {
+                    _charBuffer.Enqueue(c);
+                }
             }
+
+            // 3. Attendiamo che l'effetto di digitazione svuoti l'ultima parte della coda
+            await typewriterTask;
         }
         catch (OperationCanceledException)
         {
-            // Streaming interrotto dall'utente
+            // Annullato dall'utente
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            card.DeepDive += "\n\n[Errore durante la generazione dell'approfondimento.]";
+            card.DeepDive += "\n\n[Errore durante la generazione.]";
         }
         finally
         {
+            _charBuffer.Clear();
             isStreaming = false;
             StateHasChanged();
         }
     }
 
+    /// <summary>
+    /// Ciclo di rendering a velocità costante (macchina da scrivere)
+    /// </summary>
+    private async Task SmoothTypewriterAsync(CardModel card, CancellationToken cancellationToken)
+    {
+        while (isStreaming || !_charBuffer.IsEmpty)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            bool textChanged = false;
+
+            // Se ci sono troppi caratteri accumulati nella coda (es. la rete è stata veloce),
+            // ne processiamo 2-3 alla volta per non rimanere troppo indietro.
+            int charsToProcess = _charBuffer.Count > 50 ? 3 : 1;
+
+            for (int i = 0; i < charsToProcess; i++)
+            {
+                if (_charBuffer.TryDequeue(out char c))
+                {
+                    card.DeepDive += c;
+                    textChanged = true;
+                }
+            }
+
+            if (textChanged)
+            {
+                StateHasChanged();
+
+                // ⏱️ Regola la velocità di digitazione (12-18ms è il "sweet spot" ideale)
+                await Task.Delay(12, cancellationToken);
+            }
+            else
+            {
+                // Se la coda è momentaneamente vuota ma lo streaming è attivo, aspetta il prossimo chunk
+                await Task.Delay(30, cancellationToken);
+            }
+        }
+    }
+
     private void CloseDeepDive()
     {
-        // Annulla la chiamata HTTP se lo streaming è ancora in corso
         cts?.Cancel();
+        _charBuffer.Clear();
         selectedCardForDeepDive = null;
         isStreaming = false;
     }
 
     public void Dispose()
     {
-        cts?.Cancel();
-        cts?.Dispose();
         dotNetHelper?.Dispose();
-
     }
+
     [JSInvokable]
     public async Task OnCardVisibleAsync(string cardIdStr)
     {
