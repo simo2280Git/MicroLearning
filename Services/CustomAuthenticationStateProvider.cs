@@ -1,6 +1,7 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Components.Authorization;
+﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
+using System.Security.Claims;
+using Supabase.Gotrue;
 
 namespace MicroLearning.Services
 {
@@ -21,7 +22,6 @@ namespace MicroLearning.Services
         {
             try
             {
-                // Se non c'è una sessione in memoria, prova a leggerla da localStorage
                 if (_supabase.Auth.CurrentSession == null)
                 {
                     var accessToken = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", AccessTokenKey);
@@ -33,7 +33,7 @@ namespace MicroLearning.Services
                     }
                 }
 
-                var user = _supabase.Auth.CurrentUser;
+                User? user = _supabase.Auth.CurrentUser;
                 if (user != null)
                 {
                     var claims = new[]
@@ -51,7 +51,6 @@ namespace MicroLearning.Services
                 Console.WriteLine($"[Auth Provider Error]: {ex.Message}");
             }
 
-            // Utente non autenticato
             return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
         }
 

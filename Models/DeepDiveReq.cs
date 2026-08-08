@@ -5,6 +5,6 @@ namespace MicroLearning.Models
     public class DeepDiveReq
     {
         [JsonPropertyName("card_id")]
-        public string IdCard { get; set; }
+        public string? IdCard { get; set; }
     }
 }

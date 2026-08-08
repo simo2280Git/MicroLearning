@@ -1,11 +1,10 @@
-﻿using MicroLearn.Models;
-using MicroLearning.Models;
+﻿using MicroLearning.Models;
 using MicroLearning.Models.Context;
-using System.Net.Http.Json;
+using Microsoft.AspNetCore.Components.WebAssembly.Http; 
 using System.Runtime.CompilerServices;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using Microsoft.AspNetCore.Components.WebAssembly.Http; 
 
 namespace MicroLearning.Services
 {
@@ -24,7 +23,7 @@ namespace MicroLearning.Services
             _supabaseKey = configuration["SupabaseKey"] ?? string.Empty;
         }
 
-        public async Task<List<CardModel>> GetFeedCardsAsync(Guid UserId, List<Guid>? excludeCardIds = null)
+        public async Task<List<CardModel>> GetFeedCards(Guid UserId, List<Guid>? excludeCardIds = null)
         {
             List<CardModel> response = new List<CardModel>();
             excludeCardIds ??= new List<Guid>();
@@ -100,7 +99,7 @@ namespace MicroLearning.Services
                     .ToList();
 
                 CardsReq cardsReq = new CardsReq { UserId = UserId, Requests = listTopicItems };
-                List<Card> listGeneratedCards = await GenerateCardsWithHttpAsync(cardsReq);
+                List<Card> listGeneratedCards = await GeminiGenerateCards(cardsReq);
 
                 if (listGeneratedCards.Any())
                 {
@@ -135,7 +134,7 @@ namespace MicroLearning.Services
             return response;
         }
 
-        public async Task<List<CardModel>> GetPersonalFeedCardsAsync(Guid UserId, List<Guid>? excludeCardIds = null)
+        public async Task<List<CardModel>> GetPersonalFeedCards(Guid UserId, List<Guid>? excludeCardIds = null)
         {
             List<CardModel> response = new List<CardModel>();
             excludeCardIds ??= new List<Guid>();
@@ -217,7 +216,7 @@ namespace MicroLearning.Services
                     .ToList();
 
                 CardsReq cardsReq = new CardsReq { UserId = UserId, Requests = listTopicItems };
-                List<Card> listGeneratedCards = await GenerateCardsWithHttpAsync(cardsReq);
+                List<Card> listGeneratedCards = await GeminiGenerateCards(cardsReq);
 
                 if (listGeneratedCards.Any())
                 {
@@ -323,7 +322,7 @@ namespace MicroLearning.Services
             return result;
         }
 
-        public async Task MarkCardAsReadAsync(Guid UserId, Guid CardId)
+        public async Task MarkCardAsRead(Guid UserId, Guid CardId)
         {
             try
             {
@@ -358,7 +357,7 @@ namespace MicroLearning.Services
                 }).ToList();
         }
 
-        public async Task<List<Card>> GenerateCardsWithHttpAsync(CardsReq cardReq)
+        public async Task<List<Card>> GeminiGenerateCards(CardsReq cardReq)
         {
             try
             {
@@ -400,9 +399,7 @@ namespace MicroLearning.Services
             }
         }
 
-        public async IAsyncEnumerable<string> GetDeepDiveStreamAsync(
-    Guid cardId,
-    [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<string> GeminiGenerateDeepDiveStream(Guid cardId, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var userToken = _db.Auth.CurrentSession?.AccessToken;
 
@@ -417,7 +414,6 @@ namespace MicroLearning.Services
                 Content = JsonContent.Create(new CardDeepDiveReq { CardId = cardId })
             };
 
-            // 🚨 FONDAMENTALE PER BLAZOR WASM: Forza il browser a NON bufferizzare la risposta!
             request.SetBrowserResponseStreamingEnabled(true);
 
             request.Headers.Add("apikey", _supabaseKey);
@@ -441,7 +437,6 @@ namespace MicroLearning.Services
                 using var reader = new StreamReader(stream, Encoding.UTF8);
 
                 string? line;
-                // 🛑 Sostituito (!reader.EndOfStream) con la lettura asincrona riga per riga
                 while ((line = await reader.ReadLineAsync(cancellationToken)) != null)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -469,10 +464,7 @@ namespace MicroLearning.Services
                             .GetProperty("text")
                             .GetString();
                     }
-                    catch
-                    {
-                        // Ignora pacchetti non ancora completi
-                    }
+                    catch { }
 
                     if (!string.IsNullOrEmpty(extractedText))
                     {

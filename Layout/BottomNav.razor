@@ -19,7 +19,6 @@
 </nav>
 
 <style>
-    /* 1. Il contenitore "Volante" fisso nella finestra */
     .floating-nav-container {
         position: fixed;
         bottom: calc(20px + env(safe-area-inset-bottom, 0px));
@@ -28,18 +27,15 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        z-index: 9999; /* Sta sopra a qualsiasi elemento dello schermo */
-        pointer-events: none; /* Lascia passare i click al contenuto sottostante ai lati della pillola */
+        z-index: 9999;
+        pointer-events: none; 
     }
 
-    /* 2. La pillola stilizzata in stile vetro/sfocato */
     .bottom-nav {
-        pointer-events: auto; /* Riattiva i click solo dentro la pillola */
+        pointer-events: auto;
         width: min(88%, 340px);
         height: 60px;
-        /* Converte il tuo --surface-card (#1A212D) in formato semi-trasparente */
         background-color: rgba(26, 33, 45, 0.75);
-        /* Sfocatura del contenuto che passa sotto */
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid rgba(255, 255, 255, 0.08);
@@ -48,12 +44,10 @@
         justify-content: space-evenly;
         align-items: center;
         padding: 0 10px;
-        /* Ombra che dà il senso di sospensione in aria */
         box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
         transition: transform 0.2s ease, background-color 0.3s ease;
     }
 
-    /* Stile elementi interni */
     .nav-item {
         display: flex;
         justify-content: center;
@@ -66,16 +60,15 @@
         transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-        .nav-item:hover {
-            opacity: 0.85;
-            background-color: rgba(255, 255, 255, 0.08);
-        }
+    .nav-item:hover {
+        opacity: 0.85;
+        background-color: rgba(255, 255, 255, 0.08);
+    }
 
-        /* Icona selezionata */
-        .nav-item.active {
-            opacity: 1;
-            transform: scale(1.15);
-            background-color: rgba(255, 255, 255, 0.12);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
+    .nav-item.active {
+        opacity: 1;
+        transform: scale(1.15);
+        background-color: rgba(255, 255, 255, 0.12);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
 </style>

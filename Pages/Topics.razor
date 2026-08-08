@@ -1,18 +1,20 @@
-﻿@page "/topics"
-@using System.Security.Claims
+﻿@using MicroLearning.Models.Context
 @using MicroLearning.Components.UI
-@using MicroLearning.Models
-@using MicroLearning.Models.Context
 @using MicroLearning.Services
-@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
-@inject TopicService TopicService
-@inject UserService UserService
+@using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+@using Supabase.Gotrue
+
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthStateProvider
-@attribute [Authorize]
+@inject UserService UserService
+@inject TopicService TopicService
 
-<PageTitle>MicroLearning Feed</PageTitle>
+@attribute [Authorize]
+@page "/topics"
+
+<PageTitle>My Topics</PageTitle>
 
 @if (isLoading)
 {
@@ -25,22 +27,13 @@ else
 {
     <div class="topics-card-container">
         <div class="topics-card">
-
-            <!-- Sezione Input per Aggiungere Topic -->
             <div class="add-topic-container">
-                <input type="text"
-                       class="topic-input"
-                       placeholder="Aggiungi un nuovo topic..."
-                       @bind="newTopicName"
-                       @bind:event="oninput"
-                       @onkeyup="HandleKeyUp" />
-                <button class="btn-add" @onclick="AddTopic" disabled="@string.IsNullOrWhiteSpace(newTopicName)">
+                <input type="text" class="topic-input" placeholder="Add new Topic..." @bind="newTopicName" @bind:event="oninput" @onkeyup="HandleKeyUp" />
+                <button class="btn-add" @onclick="AddUserTopic" disabled="@string.IsNullOrWhiteSpace(newTopicName)">
                     <AppIcon Name="circle-plus" Size="20" Color="white" />
                 </button>
             </div>
-
             <h3 class="card-title">Your Topics</h3>
-
             @if (!topics.Any())
             {
                 <div class="empty-state text-center p-4">
@@ -56,7 +49,7 @@ else
                     {
                         <li class="topic-item">
                             <span class="topic-name">@topic?.Name</span>
-                            <button class="btn-delete" @onclick="() => DeleteTopic(topic)" title="Elimina topic">
+                            <button class="btn-delete" @onclick="() => DeleteUserTopic(topic)" title="Remove Topic">
                                 <AppIcon Name="trash" Size="18" Color="white" />
                             </button>
                         </li>
@@ -93,7 +86,6 @@ else
         box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
     }
 
-    /* Input Add Topic */
     .add-topic-container {
         display: flex;
         gap: 10px;
@@ -112,9 +104,9 @@ else
         transition: border-color 0.2s ease;
     }
 
-        .topic-input:focus {
-            border-color: var(--accent, #8936cc);
-        }
+    .topic-input:focus {
+        border-color: var(--accent, #8936cc);
+    }
 
     .btn-add {
         background-color: var(--accent, #8936cc);
@@ -129,15 +121,15 @@ else
         transition: opacity 0.2s ease, transform 0.1s ease;
     }
 
-        .btn-add:hover:not(:disabled) {
-            opacity: 0.9;
-            transform: scale(1.03);
-        }
+    .btn-add:hover:not(:disabled) {
+        opacity: 0.9;
+        transform: scale(1.03);
+    }
 
-        .btn-add:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
+    .btn-add:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
 
     .card-title {
         color: var(--text-main, #F1F5F9);
@@ -168,9 +160,9 @@ else
         transition: background-color 0.2s ease;
     }
 
-        .topic-item:hover {
-            background-color: rgba(255, 255, 255, 0.06);
-        }
+    .topic-item:hover {
+        background-color: rgba(255, 255, 255, 0.06);
+    }
 
     .topic-name {
         color: var(--text-main, #F1F5F9);
@@ -178,7 +170,6 @@ else
         font-size: 0.85rem;
     }
 
-    /* Bottone eliminazione */
     .btn-delete {
         background: transparent;
         border: none;
@@ -192,18 +183,18 @@ else
         transition: all 0.2s ease;
     }
 
-        .btn-delete:hover {
-            opacity: 1;
-            background-color: rgba(239, 68, 68, 0.2); /* Sfondo rosso tenue al passaggio */
-        }
+    .btn-delete:hover {
+        opacity: 1;
+        background-color: rgba(239, 68, 68, 0.2);
+    }
 </style>
 
 @code {
-    private Guid currentUserId;
-
-    private List<Topic?> topics = new();
     private bool isLoading = true;
+    private Guid currentUserId;
+    private List<Topic?> topics = new();
     private string newTopicName = string.Empty;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -211,12 +202,11 @@ else
         {
             isLoading = true;
 
-            // 🔑 USIAMO IL TUO METODO QUI!
-            var user = await UserService.GetCurrentUserAsync();
+            User? user = await UserService.GetCurrentUser();
 
             if (user != null && Guid.TryParse(user.Id, out currentUserId))
             {
-                topics = await TopicService.GetUserTopicsAsync(currentUserId);
+                topics = await TopicService.GetUserTopics(currentUserId);
             }
             else
             {
@@ -234,14 +224,13 @@ else
         }
     }
 
-
-    private async Task AddTopic()
+    private async Task AddUserTopic()
     {
         if (string.IsNullOrWhiteSpace(newTopicName)) return;
 
         try
         {
-            topics = await TopicService.AddUserTopicAsync(currentUserId, newTopicName);
+            topics = await TopicService.AddUserTopic(currentUserId, newTopicName);
             newTopicName = "";
         }
         catch (Exception ex)
@@ -250,11 +239,11 @@ else
         }
     }
 
-    private async Task DeleteTopic(Topic topic)
+    private async Task DeleteUserTopic(Topic topic)
     {
         try
         {
-            topics = await TopicService.RemoveUserTopicAsync(currentUserId, topic.Id);
+            topics = await TopicService.RemoveUserTopic(currentUserId, topic.Id);
         }
         catch (Exception ex)
         {
@@ -266,7 +255,7 @@ else
     {
         if (e.Key == "Enter")
         {
-            await AddTopic();
+            await AddUserTopic();
         }
     }
 }

@@ -1,6 +1,5 @@
-﻿using MicroLearn.Models;
+﻿using MicroLearning.Models;
 using MicroLearning.Models.Context;
-using System.Reflection;
 
 namespace MicroLearning.Services
 {
@@ -17,7 +16,7 @@ namespace MicroLearning.Services
             _supabaseKey = configuration["SupabaseKey"] ?? string.Empty;
         }
 
-        public async Task<List<Topic?>> GetUserTopicsAsync(Guid UserId)
+        public async Task<List<Topic?>> GetUserTopics(Guid UserId)
         {
             List<Topic?> response = new List<Topic?>();
 
@@ -35,7 +34,7 @@ namespace MicroLearning.Services
             return response;
         }
 
-        public async Task<List<Topic?>> AddUserTopicAsync(Guid UserId, string TopicName)
+        public async Task<List<Topic?>> AddUserTopic(Guid UserId, string TopicName)
         {
             try
             {
@@ -66,10 +65,10 @@ namespace MicroLearning.Services
                 Console.WriteLine($"[TopicService Error]: {ex.Message}");
             }
 
-            return await GetUserTopicsAsync(UserId);
+            return await GetUserTopics(UserId);
         }
 
-        public async Task<List<Topic?>> AddUserTopicAsync(Guid UserId, Guid TopicId)
+        public async Task<List<Topic?>> AddUserTopic(Guid UserId, Guid TopicId)
         {
             try
             {
@@ -90,10 +89,10 @@ namespace MicroLearning.Services
                 Console.WriteLine($"[TopicService Error]: {ex.Message}");
             }
 
-            return await GetUserTopicsAsync(UserId);
+            return await GetUserTopics(UserId);
         }
 
-        public async Task<List<Topic?>> RemoveUserTopicAsync(Guid UserId, Guid TopicId)
+        public async Task<List<Topic?>> RemoveUserTopic(Guid UserId, Guid TopicId)
         {
             try
             {
@@ -108,7 +107,7 @@ namespace MicroLearning.Services
                 Console.WriteLine($"[TopicService Error]: {ex.Message}");
             }
 
-            return await GetUserTopicsAsync(UserId);
+            return await GetUserTopics(UserId);
         }
     }
 }

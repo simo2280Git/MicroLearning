@@ -1,18 +1,23 @@
-﻿@page "/personal"
-@using System.Security.Claims
+﻿@using MicroLearning.Models
+@using MicroLearning.Models.Context
 @using MicroLearning.Components.UI
-@using MicroLearning.Models
 @using MicroLearning.Services
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
-@inject CardService CardService
-@inject UserService UserService
-@inject IJSRuntime JSRuntime
-@inject AuthenticationStateProvider AuthStateProvider
-@implements IDisposable
-@attribute [Authorize]
+@using System.Security.Claims
+@using Supabase.Gotrue
+@using System.Collections.Concurrent
 
-<PageTitle>MicroLearning Feed</PageTitle>
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserService UserService
+@inject CardService CardService
+
+@attribute [Authorize]
+@page "/personal"
+
+<PageTitle>Personal Feed</PageTitle>
 
 @if (isLoading)
 {
@@ -31,48 +36,70 @@ else if (!cards.Any())
 }
 else
 {
-    <!-- Contenitore Principale a Scorrimento "Snap" -->
     <div class="tiktok-feed-container">
         @foreach (var card in cards)
         {
             <div class="tiktok-card-item" data-card-id="@card.Id">
                 <div class="card-content-wrapper">
-
-                    <!-- Header: Topic Badge -->
                     <div class="mb-3">
                         <span class="badge-topic text-uppercase tracking-wider">
                             @card.TopicName
                         </span>
                     </div>
-
-                    <!-- Titolo e Sottotitolo -->
                     <h2 class="fw-bold mb-2 text-main card-title-custom">@card.Title</h2>
                     <h5 class="text-muted-custom mb-4 fw-normal card-subtitle-custom">@card.Subtitle</h5>
-
-                    <!-- Corpo principale della Card -->
                     <div class="card-body-scrollable">
                         <p class="fs-6 leading-relaxed text-main">@card.Body</p>
-
-                        <!-- 🔍 TASTO PER LA RICERCA SU GOOGLE -->
-                        <div class="mt-3">
-                            <a href="https://www.google.com/search?q=@(string.IsNullOrEmpty(card.KeyWords) ? Uri.EscapeDataString(card.Title) : Uri.EscapeDataString(card.KeyWords))" 
-                                target="_blank" rel="noopener noreferrer" class="d-inline-flex align-items-center gap-2" style="padding: 0 !important;">
+                        <div class="d-flex align-items-center gap-2 mt-3">
+                            <a href="https://www.google.com/search?q=@(string.IsNullOrEmpty(card.KeyWords) ? Uri.EscapeDataString(card.Title) : Uri.EscapeDataString(card.KeyWords))"
+                               target="_blank" rel="noopener noreferrer" class="action-btn" title="Cerca su Google">
                                 <AppIcon Name="globe-check" Size="16" Color="white" />
                             </a>
+                            <button type="button" class="action-btn" @onclick="() => OpenDeepDive(card)" title="Approfondisci con AI">
+                                <AppIcon Name="message-circle-question-mark" Size="16" Color="white" />
+                            </button>
                         </div>
-
-                        @if (!string.IsNullOrEmpty(card.DeepDive))
-                        {
-                            <div class="deep-dive-box mt-4 p-3 rounded-3">
-                                <h6 class="fw-bold text-accent mb-1">💡 Per approfondire:</h6>
-                                <p class="small text-muted-custom mb-0">@card.DeepDive</p>
-                            </div>
-                        }
                     </div>
-
                 </div>
             </div>
         }
+    </div>
+}
+
+@if (selectedCardForDeepDive != null)
+{
+    <div class="modal-backdrop-custom" @onclick="CloseDeepDive">
+        <div class="modal-content-custom" @onclick:stopPropagation="true">
+            <div class="modal-header-custom">
+                <div class="d-flex align-items-center gap-2">
+                    <AppIcon Name="message-circle-question-mark" Size="18" Color="white" />
+                    <h6 class="m-0 fw-bold text-accent">Card DeepDive</h6>
+                </div>
+                <button type="button" class="btn-close-modal" @onclick="CloseDeepDive">
+                    <AppIcon Name="circle-x" Size="20" Color="white" />
+                </button>
+            </div>
+            <div class="modal-body-custom">
+                <h4 class="fw-bold mb-3 text-main">@selectedCardForDeepDive.Title</h4>
+                @if (string.IsNullOrEmpty(selectedCardForDeepDive.DeepDive) && isStreaming)
+                {
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-accent mb-2" role="status" style="width: 2.5rem; height: 2.5rem;"></div>
+                        <p class="text-muted-custom small">Inizio generazione in corso...</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="leading-relaxed text-main deep-dive-text">
+                        @selectedCardForDeepDive.DeepDive
+                        @if (isStreaming)
+                        {
+                            <span class="typing-cursor"></span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
     </div>
 }
 
@@ -81,13 +108,16 @@ else
 </style>
 
 @code {
-    private Guid currentUserId;
-
-    private List<CardModel> cards = new();
-    private bool isLoading = true;
     private bool shouldInitObserver = false;
     private DotNetObjectReference<PersonalFeed>? dotNetHelper;
-    private bool isFetchingMore = false; // Previene chiamate multiple contemporanee
+    private bool isLoading = true;
+    private bool isFetchingMore = false; 
+    private bool isStreaming = false;
+    private CancellationTokenSource? cts;
+    private readonly ConcurrentQueue<char> _charBuffer = new();
+    private Guid currentUserId;
+    private List<CardModel> cards = new();
+    private CardModel? selectedCardForDeepDive;
 
     protected override async Task OnInitializedAsync()
     {
@@ -95,12 +125,11 @@ else
         {
             isLoading = true;
 
-            // 🔑 USIAMO IL TUO METODO QUI!
-            var user = await UserService.GetCurrentUserAsync();
+            User? user = await UserService.GetCurrentUser();
 
             if (user != null && Guid.TryParse(user.Id, out currentUserId))
             {
-                cards = await CardService.GetPersonalFeedCardsAsync(currentUserId);
+                cards = await CardService.GetPersonalFeedCards(currentUserId);
             }
             else
             {
@@ -133,40 +162,28 @@ else
     }
 
     [JSInvokable]
-    public async Task OnCardVisibleAsync(string cardIdStr)
+    public async Task OnCardVisible(string cardIdStr)
     {
         if (Guid.TryParse(cardIdStr, out Guid cardId) && currentUserId != Guid.Empty)
         {
-            // 1. Marca come letta per l'utente corrente
-            await CardService.MarkCardAsReadAsync(currentUserId, cardId);
+            await CardService.MarkCardAsRead(currentUserId, cardId);
 
             CardModel? card = cards.FirstOrDefault(x => x.Id == cardId);
             if (card != null)
             {
                 int indexCard = cards.IndexOf(card);
-
-                // 2. Se mancano 4 o meno card e non stiamo già scaricando...
                 if (cards.Count - indexCard <= 4 && !isFetchingMore)
                 {
                     isFetchingMore = true;
-
-                    // Passiamo gli ID attuali per NON riceverli di nuovo
-                    var currentCardIds = cards.Select(c => c.Id).ToList();
-                    var newCards = await CardService.GetPersonalFeedCardsAsync(currentUserId, currentCardIds);
-
+                    List<Guid>? currentCardIds = cards.Select(c => c.Id).ToList();
+                    List<CardModel>? newCards = await CardService.GetPersonalFeedCards(currentUserId, currentCardIds);
                     if (newCards.Any())
                     {
-                        // Aggiungiamo solo card che non abbiamo già localmente (doppia sicurezza)
-                        var uniqueNewCards = newCards.Where(nc => !cards.Any(c => c.Id == nc.Id)).ToList();
-
+                        List<CardModel> uniqueNewCards = newCards.Where(nc => !cards.Any(c => c.Id == nc.Id)).ToList();
                         if (uniqueNewCards.Any())
                         {
                             cards.AddRange(uniqueNewCards);
-
-                            // Forziamo il re-render del DOM
                             StateHasChanged();
-
-                            // Diamo un piccolissimo delay per assicurarci che il DOM Blazor abbia disegnato i nuovi elementi prima di agganciare JS
                             await Task.Delay(50);
                             await JSRuntime.InvokeVoidAsync("initCardObserver", dotNetHelper);
                         }
@@ -181,5 +198,78 @@ else
     public void Dispose()
     {
         dotNetHelper?.Dispose();
+    }
+
+    private async Task OpenDeepDive(CardModel card)
+    {
+        selectedCardForDeepDive = card;
+
+        if (!string.IsNullOrEmpty(card.DeepDive))
+            return;
+
+        card.DeepDive = string.Empty;
+        isStreaming = true;
+        cts?.Cancel();
+        cts = new CancellationTokenSource();
+
+        try
+        {
+            Task? typewriterTask = SmoothTypewriter(card, cts.Token);
+            await foreach (var chunk in CardService.GeminiGenerateDeepDiveStream(card.Id, cts.Token))
+            {
+                foreach (var c in chunk)
+                {
+                    _charBuffer.Enqueue(c);
+                }
+            }
+
+            await typewriterTask;
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception)
+        {
+            card.DeepDive += "\n\n[Errore durante la generazione.]";
+        }
+        finally
+        {
+            _charBuffer.Clear();
+            isStreaming = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SmoothTypewriter(CardModel card, CancellationToken cancellationToken)
+    {
+        while (isStreaming || !_charBuffer.IsEmpty)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            bool textChanged = false;
+            int charsToProcess = _charBuffer.Count > 50 ? 3 : 1;
+            for (int i = 0; i < charsToProcess; i++)
+            {
+                if (_charBuffer.TryDequeue(out char c))
+                {
+                    card.DeepDive += c;
+                    textChanged = true;
+                }
+            }
+            if (textChanged)
+            {
+                StateHasChanged();
+                await Task.Delay(12, cancellationToken);
+            }
+            else
+            {
+                await Task.Delay(30, cancellationToken);
+            }
+        }
+    }
+
+    private void CloseDeepDive()
+    {
+        cts?.Cancel();
+        _charBuffer.Clear();
+        selectedCardForDeepDive = null;
+        isStreaming = false;
     }
 }

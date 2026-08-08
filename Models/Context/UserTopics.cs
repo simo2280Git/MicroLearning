@@ -1,8 +1,8 @@
 ﻿using MicroLearning.Models.Context;
-using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
+using Supabase.Postgrest.Attributes;
 
-namespace MicroLearn.Models
+namespace MicroLearning.Models
 {
     [Table("user_topics")]
     public class UserTopics : BaseModel

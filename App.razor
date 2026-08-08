@@ -8,11 +8,9 @@
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
                 <NotAuthorized>
-                    <!-- Mostrato solo se NON autenticato -->
                     <RedirectToLogin />
                 </NotAuthorized>
                 <Authorizing>
-                    <!-- Mostrato durante la lettura da localStorage per evitare lo sfarfallio -->
                     <div class="auth-loading-screen">
                         <div class="spinner-border text-accent" style="width: 3rem; height: 3rem;" role="status"></div>
                     </div>
@@ -23,7 +21,7 @@
         <NotFound>
             <PageTitle>Not found</PageTitle>
             <LayoutView Layout="@typeof(MainLayout)">
-                <p role="alert">Pagina non trovata.</p>
+                <p role="alert">Page not found.</p>
             </LayoutView>
         </NotFound>
     </Router>
@@ -42,28 +40,24 @@
 <script>
     let cardObserver = null;
     window.initCardObserver = (dotNetHelper) => {
-        // Se c'è già un observer attivo, disattivalo prima di ricrearlo
         if (cardObserver) {
             cardObserver.disconnect();
         }
-
         const cards = document.querySelectorAll('.tiktok-card-item');
         if (!cards.length) return;
-
         cardObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     const cardId = entry.target.getAttribute('data-card-id');
                     if (cardId) {
-                        dotNetHelper.invokeMethodAsync('OnCardVisibleAsync', cardId);
+                        dotNetHelper.invokeMethodAsync('OnCardVisible', cardId);
                     }
                 }
             });
         }, {
             root: document.querySelector('.tiktok-feed-container'),
-            threshold: 0.6 // La card deve essere visibile almeno al 60%
+            threshold: 0.6
         });
-
         cards.forEach(card => cardObserver.observe(card));
     };
 </script>

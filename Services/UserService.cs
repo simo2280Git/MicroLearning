@@ -36,14 +36,14 @@ namespace MicroLearning.Services
         /// <summary>
         /// Effettua il login con email e password, salvando i token nel localStorage.
         /// </summary>
-        public async Task<bool> LoginAsync(string email, string password)
+        public async Task<bool> Login(string email, string password)
         {
             try
             {
                 var response = await _supabase.Auth.SignIn(email, password);
                 if (response != null)
                 {
-                    await SaveTokensAsync(response.AccessToken, response.RefreshToken);
+                    await SaveTokens(response.AccessToken, response.RefreshToken);
 
                     // Notifica il CustomAuthStateProvider del cambio di stato
                     if (_authStateProvider is CustomAuthStateProvider customProvider)
@@ -65,14 +65,14 @@ namespace MicroLearning.Services
         /// <summary>
         /// Registra un nuovo utente e, se la sessione viene aperta subito, salva i token nel localStorage.
         /// </summary>
-        public async Task<bool> RegisterAsync(string email, string password)
+        public async Task<bool> Register(string email, string password)
         {
             try
             {
                 var response = await _supabase.Auth.SignUp(email, password);
                 if (response != null)
                 {
-                    await SaveTokensAsync(response.AccessToken, response.RefreshToken);
+                    await SaveTokens(response.AccessToken, response.RefreshToken);
 
                     if (_authStateProvider is CustomAuthStateProvider customProvider)
                     {
@@ -91,7 +91,7 @@ namespace MicroLearning.Services
         /// <summary>
         /// Effettua il logout da Supabase e rimuove i token memorizzati nel browser.
         /// </summary>
-        public async Task LogoutAsync()
+        public async Task Logout()
         {
             try
             {
@@ -103,7 +103,7 @@ namespace MicroLearning.Services
             }
             finally
             {
-                await ClearTokensAsync();
+                await ClearTokens();
 
                 if (_authStateProvider is CustomAuthStateProvider customProvider)
                 {
@@ -115,13 +115,13 @@ namespace MicroLearning.Services
         /// <summary>
         /// Ottiene l'utente corrente garantendo che lo stato di autenticazione sia stato risolto dal Provider.
         /// </summary>
-        public async Task<User?> GetCurrentUserAsync()
+        public async Task<User?> GetCurrentUser()
         {
             await _authStateProvider.GetAuthenticationStateAsync();
             return _supabase.Auth.CurrentUser;
         }
 
-        private async Task SaveTokensAsync(string? accessToken, string? refreshToken)
+        private async Task SaveTokens(string? accessToken, string? refreshToken)
         {
             if (!string.IsNullOrEmpty(accessToken) && !string.IsNullOrEmpty(refreshToken))
             {
@@ -130,7 +130,7 @@ namespace MicroLearning.Services
             }
         }
 
-        private async Task ClearTokensAsync()
+        private async Task ClearTokens()
         {
             await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", AccessTokenKey);
             await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", RefreshTokenKey);

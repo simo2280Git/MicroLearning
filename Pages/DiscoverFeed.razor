@@ -1,22 +1,24 @@
-﻿@page "/discover"
-@using MicroLearn.Models
-@using MicroLearning.Components.UI
-@using MicroLearning.Models
+﻿@using MicroLearning.Models
 @using MicroLearning.Models.Context
+@using MicroLearning.Components.UI
 @using MicroLearning.Services
 @using Microsoft.AspNetCore.Authorization
-@inject CardService CardService
-@inject UserService UserService
-@inject TopicService TopicService
-@inject IJSRuntime JSRuntime
-@implements IDisposable
-@using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Collections.Concurrent;
-@inject AuthenticationStateProvider AuthStateProvider
-@attribute [Authorize]
+@using System.Security.Claims
+@using Supabase.Gotrue
 
-<PageTitle>MicroLearning Feed</PageTitle>
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserService UserService
+@inject TopicService TopicService
+@inject CardService CardService
+
+@attribute [Authorize]
+@page "/discover"
+
+<PageTitle>Discover Feed</PageTitle>
 
 @if (isLoading)
 {
@@ -35,48 +37,37 @@ else if (!cards.Any())
 }
 else
 {
-    <!-- Contenitore Principale a Scorrimento "Snap" -->
     <div class="tiktok-feed-container">
         @foreach (var card in cards)
         {
             <div class="tiktok-card-item" data-card-id="@card.Id">
                 <div class="card-content-wrapper">
-
-                    <!-- Header: Topic Badge con Cambio Dinamico Icona -->
                     <div class="mb-3">
                         <div class="badge-topic text-uppercase tracking-wider">
                             <span>@card.TopicName</span>
-
                             @if (IsTopicFollowed(card.TopicId))
                             {
-                                <button type="button" class="btn-add-topic followed" disabled title="Argomento già seguito">
+                                <button type="button" class="btn-add-topic followed" disabled title="Topic already followed">
                                     <AppIcon Name="check" Size="16" Color="white" />
                                 </button>
                             }
                             else
                             {
-                                <button type="button" class="btn-add-topic" @onclick="() => AddTopic(card.TopicId)" title="Aggiungi topic ai tuoi preferiti">
+                                <button type="button" class="btn-add-topic" @onclick="() => AddTopic(card.TopicId)" title="Follow Topic">
                                     <AppIcon Name="circle-plus" Size="16" Color="white" />
                                 </button>
                             }
                         </div>
                     </div>
-
-                    <!-- Titolo e Sottotitolo -->
                     <h2 class="fw-bold mb-2 text-main card-title-custom">@card.Title</h2>
                     <h5 class="text-muted-custom mb-4 fw-normal card-subtitle-custom">@card.Subtitle</h5>
-
-                    <!-- Corpo principale della Card -->
                     <div class="card-body-scrollable">
                         <p class="fs-6 leading-relaxed text-main">@card.Body</p>
-
-                        <!-- 🔍 AZIONI CARD (RICERCA GOOGLE + MODAL DEEP DIVE) -->
                         <div class="d-flex align-items-center gap-2 mt-3">
                             <a href="https://www.google.com/search?q=@(string.IsNullOrEmpty(card.KeyWords) ? Uri.EscapeDataString(card.Title) : Uri.EscapeDataString(card.KeyWords))"
                                target="_blank" rel="noopener noreferrer" class="action-btn" title="Cerca su Google">
                                 <AppIcon Name="globe-check" Size="16" Color="white" />
                             </a>
-
                             <button type="button" class="action-btn" @onclick="() => OpenDeepDive(card)" title="Approfondisci con AI">
                                 <AppIcon Name="message-circle-question-mark" Size="16" Color="white" />
                             </button>
@@ -89,7 +80,6 @@ else
     </div>
 }
 
-<!-- 💡 MODAL POPUP APPROFONDIMENTO (DEEP DIVE STREAMING) -->
 @if (selectedCardForDeepDive != null)
 {
     <div class="modal-backdrop-custom" @onclick="CloseDeepDive">
@@ -105,7 +95,6 @@ else
             </div>
             <div class="modal-body-custom">
                 <h4 class="fw-bold mb-3 text-main">@selectedCardForDeepDive.Title</h4>
-
                 @if (string.IsNullOrEmpty(selectedCardForDeepDive.DeepDive) && isStreaming)
                 {
                     <div class="text-center py-4">
@@ -133,18 +122,17 @@ else
 </style>
 
 @code {
+    private bool shouldInitObserver = false;
+    private DotNetObjectReference<DiscoverFeed>? dotNetHelper;
+    private bool isLoading = true;
+    private bool isFetchingMore = false;
+    private bool isStreaming = false;
+    private CancellationTokenSource? cts;
+    private readonly ConcurrentQueue<char> _charBuffer = new();
     private Guid currentUserId;
     private List<CardModel> cards = new();
     private List<Topic?> userTopics = new();
-    private bool isLoading = true;
-    private bool shouldInitObserver = false;
-    private DotNetObjectReference<DiscoverFeed>? dotNetHelper;
-    private bool isFetchingMore = false;
     private CardModel? selectedCardForDeepDive;
-    private bool isStreaming = false;
-    private CancellationTokenSource? cts;
-    // Coda thread-safe per accumulare i caratteri in arrivo dalla rete
-    private readonly ConcurrentQueue<char> _charBuffer = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -152,12 +140,12 @@ else
         {
             isLoading = true;
 
-            var user = await UserService.GetCurrentUserAsync();
+            User? user = await UserService.GetCurrentUser();
 
             if (user != null && Guid.TryParse(user.Id, out currentUserId))
             {
-                cards = await CardService.GetFeedCardsAsync(currentUserId);
-                userTopics = await TopicService.GetUserTopicsAsync(currentUserId);
+                cards = await CardService.GetFeedCards(currentUserId);
+                userTopics = await TopicService.GetUserTopics(currentUserId);
             }
             else
             {
@@ -179,118 +167,14 @@ else
         }
     }
 
-    private bool IsTopicFollowed(Guid topicId)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        return userTopics.Any(t => t != null && t.Id == topicId);
-    }
-
-    private async Task AddTopic(Guid topicId)
-    {
-        // Controllo di sicurezza: se è già seguito non fa nulla
-        if (IsTopicFollowed(topicId)) return;
-
-        try
+        if (shouldInitObserver)
         {
-            userTopics = await TopicService.AddUserTopicAsync(currentUserId, topicId);
-            StateHasChanged(); // Aggiorna immediatamente l'interfaccia
+            shouldInitObserver = false;
+            dotNetHelper = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("initCardObserver", dotNetHelper);
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[ADD TOPIC] Errore: {ex.Message}");
-        }
-    }
-
-    private async Task OpenDeepDive(CardModel card)
-    {
-        selectedCardForDeepDive = card;
-
-        if (!string.IsNullOrEmpty(card.DeepDive))
-            return;
-
-        card.DeepDive = string.Empty;
-        isStreaming = true;
-
-        cts?.Cancel();
-        cts = new CancellationTokenSource();
-
-        try
-        {
-            // 1. Avviamo in parallelo il task che "digita" a schermo in modo costante
-            var typewriterTask = SmoothTypewriterAsync(card, cts.Token);
-
-            // 2. Leggiamo lo stream di rete e riempiamo la coda
-            await foreach (var chunk in CardService.GetDeepDiveStreamAsync(card.Id, cts.Token))
-            {
-                foreach (var c in chunk)
-                {
-                    _charBuffer.Enqueue(c);
-                }
-            }
-
-            // 3. Attendiamo che l'effetto di digitazione svuoti l'ultima parte della coda
-            await typewriterTask;
-        }
-        catch (OperationCanceledException)
-        {
-            // Annullato dall'utente
-        }
-        catch (Exception)
-        {
-            card.DeepDive += "\n\n[Errore durante la generazione.]";
-        }
-        finally
-        {
-            _charBuffer.Clear();
-            isStreaming = false;
-            StateHasChanged();
-        }
-    }
-
-    /// <summary>
-    /// Ciclo di rendering a velocità costante (macchina da scrivere)
-    /// </summary>
-    private async Task SmoothTypewriterAsync(CardModel card, CancellationToken cancellationToken)
-    {
-        while (isStreaming || !_charBuffer.IsEmpty)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            bool textChanged = false;
-
-            // Se ci sono troppi caratteri accumulati nella coda (es. la rete è stata veloce),
-            // ne processiamo 2-3 alla volta per non rimanere troppo indietro.
-            int charsToProcess = _charBuffer.Count > 50 ? 3 : 1;
-
-            for (int i = 0; i < charsToProcess; i++)
-            {
-                if (_charBuffer.TryDequeue(out char c))
-                {
-                    card.DeepDive += c;
-                    textChanged = true;
-                }
-            }
-
-            if (textChanged)
-            {
-                StateHasChanged();
-
-                // ⏱️ Regola la velocità di digitazione (12-18ms è il "sweet spot" ideale)
-                await Task.Delay(12, cancellationToken);
-            }
-            else
-            {
-                // Se la coda è momentaneamente vuota ma lo streaming è attivo, aspetta il prossimo chunk
-                await Task.Delay(30, cancellationToken);
-            }
-        }
-    }
-
-    private void CloseDeepDive()
-    {
-        cts?.Cancel();
-        _charBuffer.Clear();
-        selectedCardForDeepDive = null;
-        isStreaming = false;
     }
 
     public void Dispose()
@@ -299,11 +183,11 @@ else
     }
 
     [JSInvokable]
-    public async Task OnCardVisibleAsync(string cardIdStr)
+    public async Task OnCardVisible(string cardIdStr)
     {
         if (Guid.TryParse(cardIdStr, out Guid cardId) && currentUserId != Guid.Empty)
         {
-            await CardService.MarkCardAsReadAsync(currentUserId, cardId);
+            await CardService.MarkCardAsRead(currentUserId, cardId);
 
             CardModel? card = cards.FirstOrDefault(x => x.Id == cardId);
             if (card != null)
@@ -313,15 +197,11 @@ else
                 if (cards.Count - indexCard <= 4 && !isFetchingMore)
                 {
                     isFetchingMore = true;
-
-                    var currentCardIds = cards.Select(c => c.Id).ToList();
-
-                    var newCards = await CardService.GetFeedCardsAsync(currentUserId, currentCardIds);
-
+                    List<Guid>? currentCardIds = cards.Select(c => c.Id).ToList();
+                    List<CardModel>? newCards = await CardService.GetFeedCards(currentUserId, currentCardIds);
                     if (newCards.Any())
                     {
-                        var uniqueNewCards = newCards.Where(nc => !cards.Any(c => c.Id == nc.Id)).ToList();
-
+                        List<CardModel> uniqueNewCards = newCards.Where(nc => !cards.Any(c => c.Id == nc.Id)).ToList();
                         if (uniqueNewCards.Any())
                         {
                             cards.AddRange(uniqueNewCards);
@@ -338,14 +218,96 @@ else
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private bool IsTopicFollowed(Guid topicId)
     {
-        if (shouldInitObserver)
+        return userTopics.Any(t => t != null && t.Id == topicId);
+    }
+
+    private async Task AddTopic(Guid topicId)
+    {
+        if (IsTopicFollowed(topicId)) return;
+
+        try
         {
-            shouldInitObserver = false;
-            dotNetHelper = DotNetObjectReference.Create(this);
-            await JSRuntime.InvokeVoidAsync("initCardObserver", dotNetHelper);
+            userTopics = await TopicService.AddUserTopic(currentUserId, topicId);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ADD TOPIC] Errore: {ex.Message}");
         }
     }
 
+    private async Task OpenDeepDive(CardModel card)
+    {
+        selectedCardForDeepDive = card;
+
+        if (!string.IsNullOrEmpty(card.DeepDive))
+            return;
+
+        card.DeepDive = string.Empty;
+        isStreaming = true;
+        cts?.Cancel();
+        cts = new CancellationTokenSource();
+
+        try
+        {
+            Task? typewriterTask = SmoothTypewriter(card, cts.Token);
+            await foreach (var chunk in CardService.GeminiGenerateDeepDiveStream(card.Id, cts.Token))
+            {
+                foreach (var c in chunk)
+                {
+                    _charBuffer.Enqueue(c);
+                }
+            }
+
+            await typewriterTask;
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception)
+        {
+            card.DeepDive += "\n\n[Errore durante la generazione.]";
+        }
+        finally
+        {
+            _charBuffer.Clear();
+            isStreaming = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SmoothTypewriter(CardModel card, CancellationToken cancellationToken)
+    {
+        while (isStreaming || !_charBuffer.IsEmpty)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            bool textChanged = false;
+            int charsToProcess = _charBuffer.Count > 50 ? 3 : 1;
+            for (int i = 0; i < charsToProcess; i++)
+            {
+                if (_charBuffer.TryDequeue(out char c))
+                {
+                    card.DeepDive += c;
+                    textChanged = true;
+                }
+            }
+            if (textChanged)
+            {
+                StateHasChanged();
+                await Task.Delay(12, cancellationToken);
+            }
+            else
+            {
+                await Task.Delay(30, cancellationToken);
+            }
+        }
+    }
+
+    private void CloseDeepDive()
+    {
+        cts?.Cancel();
+        _charBuffer.Clear();
+        selectedCardForDeepDive = null;
+        isStreaming = false;
+    }
 }

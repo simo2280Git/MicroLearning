@@ -1,5 +1,5 @@
-﻿using Supabase.Postgrest.Attributes;
-using Supabase.Postgrest.Models;
+﻿using Supabase.Postgrest.Models;
+using Supabase.Postgrest.Attributes;
 using System.Text.Json.Serialization;
 
 namespace MicroLearning.Models.Context
@@ -32,7 +32,6 @@ namespace MicroLearning.Models.Context
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
 
-        // Relazione opzionale con il Topic per caricare il nome dell'argomento
         [Reference(typeof(Topic))]
         [JsonPropertyName("topics")]
         public Topic? Topic { get; set; }
