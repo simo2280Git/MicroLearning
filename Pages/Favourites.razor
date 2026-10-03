@@ -1,4 +1,5 @@
-﻿@using MicroLearning.Models.Context
+﻿@using MicroLearning.Models
+@using MicroLearning.Models.Context
 @using MicroLearning.Components.UI
 @using MicroLearning.Services
 @using Microsoft.AspNetCore.Components.Authorization
@@ -9,12 +10,12 @@
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthStateProvider
 @inject UserService UserService
-@inject TopicService TopicService
+@inject CardService CardService
 
 @attribute [Authorize]
-@page "/topics"
+@page "/favourites"
 
-<PageTitle>My Topics</PageTitle>
+<PageTitle>My Favourites Cards</PageTitle>
 
 @if (isLoading)
 {
@@ -26,31 +27,22 @@ else
 {
     <div class="topics-card-container">
         <div class="topics-card">
-            <div class="add-topic-container">
-                <input type="text" class="topic-input" placeholder="Add new Topic..." @bind="newTopicName" @bind:event="oninput" @onkeyup="HandleKeyUp" />
-                <button class="btn-add" @onclick="AddUserTopic" disabled="@string.IsNullOrWhiteSpace(newTopicName)">
-                    <AppIcon Name="circle-plus" Size="20" Color="white" />
-                </button>
-            </div>
-            <h3 class="card-title">Your Topics</h3>
-            @if (!topics.Any())
+            <h3 class="card-title">Your Favourite Cards</h3>
+            @if (!favouritesCards.Any())
             {
                 <div class="empty-state text-center p-4">
                     <i class="bi bi-journal-x display-1 text-muted-custom mb-3"></i>
                     <h4 class="text-main fw-bold">No Topics available</h4>
-                    <p class="text-muted-custom">Make sure to follow at least one Topic!</p>
+                    <p class="text-muted-custom">Make sure to save at least one Card!</p>
                 </div>
             }
             else
             {
                 <ul class="topics-list">
-                    @foreach (var topic in topics)
+                    @foreach (var card in favouritesCards)
                     {
                         <li class="topic-item">
-                            <span class="topic-name">@topic?.Name</span>
-                            <button class="btn-delete" @onclick="() => DeleteUserTopic(topic)" title="Remove Topic">
-                                <AppIcon Name="trash" Size="18" Color="white" />
-                            </button>
+                            <span class="topic-name">@card?.Title</span>
                         </li>
                     }
                 </ul>
@@ -191,8 +183,7 @@ else
 @code {
     private bool isLoading = true;
     private Guid currentUserId;
-    private List<Topic?> topics = new();
-    private string newTopicName = string.Empty;
+    private List<CardModel> favouritesCards = new();
 
 
     protected override async Task OnInitializedAsync()
@@ -205,56 +196,21 @@ else
 
             if (user != null && Guid.TryParse(user.Id, out currentUserId))
             {
-                topics = await TopicService.GetUserTopics(currentUserId);
+                favouritesCards = await CardService.GetUserFavouriteCards(currentUserId);
             }
             else
             {
-                topics = new List<Topic?>();
+                favouritesCards = new List<CardModel>();
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[AVVIO FEED] Errore: {ex.Message}");
-            topics = new List<Topic?>();
+            favouritesCards = new List<CardModel>();
         }
         finally
         {
             isLoading = false;
-        }
-    }
-
-    private async Task AddUserTopic()
-    {
-        if (string.IsNullOrWhiteSpace(newTopicName)) return;
-
-        try
-        {
-            topics = await TopicService.AddUserTopic(currentUserId, newTopicName);
-            newTopicName = "";
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[AVVIO FEED] Errore: {ex.Message}");
-        }
-    }
-
-    private async Task DeleteUserTopic(Topic topic)
-    {
-        try
-        {
-            topics = await TopicService.RemoveUserTopic(currentUserId, topic.Id);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[AVVIO FEED] Errore: {ex.Message}");
-        }
-    }
-
-    private async Task HandleKeyUp(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            await AddUserTopic();
         }
     }
 }

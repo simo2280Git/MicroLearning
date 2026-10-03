@@ -1,8 +1,9 @@
 ﻿using MicroLearning.Models;
 using MicroLearning.Models.Context;
+using MicroLearning.Pages;
 using Microsoft.AspNetCore.Components.WebAssembly.Http; 
-using System.Runtime.CompilerServices;
 using System.Net.Http.Json;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 
@@ -354,7 +355,67 @@ namespace MicroLearning.Services
                     Body = x.Card.Body,
                     DeepDive = x.Card.DeepDive,
                     KeyWords = x.Card.KeyWords,
+                    Favourite = x.Favourite
                 }).ToList();
+        }
+
+        public async Task<CardModel> AddToFavourites(Guid UserId, CardModel Card)
+        {
+            try
+            {
+                UserCards? userCard = (await _db.From<UserCards>().Where(x => x.UserId == UserId).Where(x => x.CardId == Card.Id).Get()).Model;
+                if (userCard != null && !userCard.Favourite)
+                {
+                    userCard.Favourite = true;
+
+                    await _db.From<UserCards>().Upsert(userCard);
+                    Card.Favourite = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[TopicService Error]: {ex.Message}");
+            }
+
+            return Card;
+        }
+       
+        public async Task<CardModel> RemoveFromFavourites(Guid UserId, CardModel Card)
+        {
+            try
+            {
+                UserCards? userCard = (await _db.From<UserCards>().Where(x => x.UserId == UserId).Where(x => x.CardId == Card.Id).Get()).Model;
+                if (userCard != null && userCard.Favourite)
+                {
+                    userCard.Favourite = false;
+
+                    await _db.From<UserCards>().Upsert(userCard);
+                    Card.Favourite = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[TopicService Error]: {ex.Message}");
+            }
+
+            return Card;
+        }
+
+        public async Task<List<CardModel>> GetUserFavouriteCards(Guid UserId)
+        {
+            List<CardModel> favouriteUserCardsModel = new List<CardModel>();
+
+            try
+            {
+                List<UserCards> favouriteUserCards = (await _db.From<UserCards>().Where(x => x.UserId == UserId).Where(x => x.Favourite).Get()).Models;
+                favouriteUserCardsModel = MapToCardModelList(favouriteUserCards);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[TopicService Error]: {ex.Message}");
+            }
+
+            return favouriteUserCardsModel;
         }
 
         public async Task<List<Card>> GeminiGenerateCards(CardsReq cardReq)

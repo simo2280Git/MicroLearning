@@ -24,7 +24,6 @@
 {
     <div class="feed-state-container">
         <div class="spinner-border text-accent mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
-        <p class="fw-semibold">L'AI sta preparando il tuo feed...</p>
     </div>
 }
 else if (!cards.Any())
@@ -71,6 +70,18 @@ else
                             <button type="button" class="action-btn" @onclick="() => OpenDeepDive(card)" title="Approfondisci con AI">
                                 <AppIcon Name="message-circle-question-mark" Size="16" Color="white" />
                             </button>
+                            @if (card.Favourite)
+                            {
+                                <button type="button" class="action-btn" @onclick="() => RemoveFromFavourites(card)">
+                                    <AppIcon Name="bookmark-off" Size="16" Color="white" />
+                                </button>
+                            }
+                            else
+                            {
+                                <button type="button" class="action-btn" @onclick="() => AddToFavourites(card)">
+                                    <AppIcon Name="bookmark" Size="16" Color="white" />
+                                </button>
+                            }
                         </div>
                     </div>
 
@@ -310,4 +321,31 @@ else
         selectedCardForDeepDive = null;
         isStreaming = false;
     }
+
+    private async Task AddToFavourites(CardModel card)
+    {
+        try
+        {
+            card = await CardService.AddToFavourites(currentUserId, card);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ADD TOPIC] Errore: {ex.Message}");
+        }
+    }
+
+    private async Task RemoveFromFavourites(CardModel card)
+    {
+        try
+        {
+            card = await CardService.RemoveFromFavourites(currentUserId, card);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ADD TOPIC] Errore: {ex.Message}");
+        }
+    }
+
 }

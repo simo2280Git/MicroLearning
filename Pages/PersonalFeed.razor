@@ -58,6 +58,18 @@ else
                             <button type="button" class="action-btn" @onclick="() => OpenDeepDive(card)" title="Approfondisci con AI">
                                 <AppIcon Name="message-circle-question-mark" Size="16" Color="white" />
                             </button>
+                            @if (card.Favourite)
+                            {
+                                <button type="button" class="action-btn" @onclick="() => RemoveFromFavourites(card)">
+                                    <AppIcon Name="bookmark-off" Size="16" Color="white" />
+                                </button>
+                            }
+                            else
+                            {
+                                <button type="button" class="action-btn" @onclick="() => AddToFavourites(card)">
+                                    <AppIcon Name="bookmark" Size="16" Color="white" />
+                                </button>
+                            }
                         </div>
                     </div>
                 </div>
@@ -271,5 +283,31 @@ else
         _charBuffer.Clear();
         selectedCardForDeepDive = null;
         isStreaming = false;
+    }
+
+    private async Task AddToFavourites(CardModel card)
+    {
+        try
+        {
+            card = await CardService.AddToFavourites(currentUserId, card);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ADD TOPIC] Errore: {ex.Message}");
+        }
+    }
+
+    private async Task RemoveFromFavourites(CardModel card)
+    {
+        try
+        {
+            card = await CardService.RemoveFromFavourites(currentUserId, card);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ADD TOPIC] Errore: {ex.Message}");
+        }
     }
 }

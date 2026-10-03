@@ -20,6 +20,9 @@ namespace MicroLearning.Models
         
         [Column("is_personal_feed")]
         public bool IsPersonalFeed { get; set; }
+        
+        [Column("favourite")]
+        public bool Favourite { get; set; }
 
         [Reference(typeof(Card))]
         public Card? Card { get; set; }

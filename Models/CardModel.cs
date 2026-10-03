@@ -17,5 +17,7 @@
         public string? DeepDive { get; set; }
 
         public string? KeyWords { get; set; }
+
+        public bool Favourite { get; set; }
     }
 }
